@@ -1,0 +1,9 @@
+[submodule "scrapper"]
+	path = scrapper
+	url = https://github.com/BrianValdiviesoDev/reviewshub-scrapper.git
+[submodule "front"]
+	path = front
+	url = https://github.com/BrianValdiviesoDev/reviewshub-front.git
+[submodule "api"]
+	path = api
+	url = https://github.com/BrianValdiviesoDev/reviewshub-api.git
