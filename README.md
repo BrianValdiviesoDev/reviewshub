@@ -50,6 +50,27 @@ db.createUser(
 )
 ```
 
+Create a base company
+```bash
+db.getCollection("company").insertOne({name:"ReviewsHub"})
+```
+
+Take the ObjectId of the company and create a SUPERADMIN user
+```bash
+db.getCollection("users").insertOne({
+    "name" : "Brian Valdivieso",
+    "email" : "admin@admin.com",
+    "password" : "$2b$10$.BSyPv0/T7wMMzb4Mmiw5.oAaYVp4tex7rzoLCOWjb.rj4183pKA2",
+    "rol" : "SUPERADMIN",
+    "createdAt" : ISODate("2023-12-06T09:51:05.092+0000"),
+    "updatedAt" : ISODate("2023-12-06T09:51:05.092+0000"),
+    "__v" : NumberInt(0),
+    "company" : ObjectId("your_company_id")
+})
+
+```
+
+Now you can log in as admin@admin.com wiht password 123456 in the front.
 
 ## Environment variables
 __MONGO_ROOT_USERNAME__ : root username in mongo

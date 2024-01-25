@@ -62,6 +62,10 @@ services:
       - REVIEWS_HUB_URL=http://reviews-api:4000
       - REVIEWS_BACKOFFICE_URL=http://reviews-front:3000
       - DEBUG=true
+    volumes:
+      - type: volume
+        source: logs
+        target: /app/logs
     networks:
       - reviews-network
 
@@ -85,7 +89,6 @@ services:
     depends_on:
       - selenium-hub
 
-
 networks:
   reviews-network:
     driver: bridge
@@ -95,3 +98,5 @@ volumes:
     name: mongo_data
   MONGO_CONFIG:
     name: mongo_config
+  logs:
+    name: reviews_scrapper_logs
