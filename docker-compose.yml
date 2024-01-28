@@ -65,6 +65,8 @@ services:
       - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
       - DEBUG=true
       - HUB_MODE=true
+      - PRODUCTS_TO_SEARCH=20
+      - REVIEWS_TO_READ=100
     volumes:
       - type: volume
         source: scrapper_logs
