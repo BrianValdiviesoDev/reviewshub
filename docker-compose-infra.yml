@@ -29,49 +29,6 @@ services:
     networks:
       - reviews-network
 
-  reviews-api:
-    image: reviews-api:latest
-    ports:
-      - "4000:4000"
-    environment:
-      - MONGO_DB_URI=${MONGO_DB_URI}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - SCRAPPER_URL=http://reviews-scrapper:8000
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - REVIEWS_BACKOFFICE_URL=http://reviews-front:3000
-    networks:
-      - reviews-network
-    volumes:
-      - type: volume
-        source: api_logs
-        target: /app/logs
-  
-  reviews-front:
-    image: reviews-front:latest
-    ports:
-      - "3000:3000"
-    networks:
-      - reviews-network
-
-  reviews-scrapper:
-    image: reviews-scrapper:latest
-    ports: 
-      - "5000:80"
-    environment:
-      - MONGO_DB_URI=${MONGO_DB_URI}
-      - REVIEWS_HUB_URL=http://reviews-api:4000
-      - REVIEWS_BACKOFFICE_URL=http://reviews-front:3000
-      - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
-      - DEBUG=true
-      - HUB_MODE=true
-    volumes:
-      - type: volume
-        source: scrapper_logs
-        target: /app/logs
-    networks:
-      - reviews-network
-
   selenium-hub:
     image: selenium/hub:latest
     ports: 
@@ -96,7 +53,7 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-
+  
 networks:
   reviews-network:
     driver: bridge
