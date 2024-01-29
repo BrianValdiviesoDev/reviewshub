@@ -95,7 +95,10 @@ __OPENAI_API_KEY__ : yout OpenAi token
 - Selenium Hub: to manage all browser instances
 - Selenium chrome-node: an instance for scrappe. Here you run a browser and you can build more instances.
 
+![schema](infra.png)
 
+## Development
+You can run docker-compose-infra.yml to run a docker network with mongo, redis and selenium and you can run on your console the front, api and scrapper for development.
 
 ## Links
 [Front](http://localhost:3000/)
