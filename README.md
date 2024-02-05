@@ -10,29 +10,12 @@ First of all you need to set environment variables.
 
 2 - Go to front folder and edit .env file to set as you need. (api url and scrapper url).
 
-### Building Dockers
+### Wake up
 
-Build front docker
-```bash
-cd front
-docker build -t reviews-front .
-```
+Build all images and wake up all
 
-Build api docker
 ```bash
-cd api
-docker build -t reviews-api .
-```
-
-Build scrapper docker
-```bash
-cd scrapper
-docker build -t reviews-scrapper .
-```
-
-### Deploy dockers
-```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 ## Prepare MongoDB
@@ -99,6 +82,10 @@ __OPENAI_API_KEY__ : yout OpenAi token
 
 ## Development
 You can run docker-compose-infra.yml to run a docker network with mongo, redis and selenium and you can run on your console the front, api and scrapper for development.
+
+```bash
+  docker-compose -f docker-compose-infra.yml up -d
+```
 
 ## Links
 [Front](http://localhost:3000/)

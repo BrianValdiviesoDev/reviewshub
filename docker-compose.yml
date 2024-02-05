@@ -30,7 +30,9 @@ services:
       - reviews-network
 
   reviews-api:
-    image: reviews-api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
     ports:
       - "4000:4000"
     environment:
@@ -48,14 +50,18 @@ services:
         target: /app/logs
   
   reviews-front:
-    image: reviews-front:latest
+    build:
+      context: ./front
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     networks:
       - reviews-network
 
   reviews-scrapper:
-    image: reviews-scrapper:latest
+    build:
+      context: ./scrapper
+      dockerfile: Dockerfile
     ports: 
       - "5000:80"
     environment:
