@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { LogsService } from './logs.service';
+import { LogsController } from './logs.controller';
+import { HttpModule } from '@nestjs/axios';
+
+@Module({
+  imports: [HttpModule],
+  controllers: [LogsController],
+  providers: [LogsService],
+  exports: [LogsService],
+})
+export class LogsModule {}
