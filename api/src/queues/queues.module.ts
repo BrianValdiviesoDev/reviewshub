@@ -11,6 +11,8 @@ import { LogsModule } from 'src/logs/logs.module';
 import { LogsService } from 'src/logs/logs.service';
 import { Request, RequestSchema } from 'src/requests/entities/requests.schema';
 import { HttpModule } from '@nestjs/axios';
+import { ConsumerService } from './consumer.service';
+import { ProducerService } from './producer.service';
 
 @Module({
   imports: [
@@ -25,7 +27,13 @@ import { HttpModule } from '@nestjs/axios';
     LogsModule,
   ],
   controllers: [QueuesController],
-  providers: [OpenAiQueueService, QueuesService, LogsService],
-  exports: [QueuesService],
+  providers: [
+    OpenAiQueueService,
+    QueuesService,
+    LogsService,
+    ConsumerService,
+    ProducerService,
+  ],
+  exports: [QueuesService, ProducerService],
 })
 export class QueuesModule {}

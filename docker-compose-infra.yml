@@ -54,6 +54,21 @@ services:
       mode: replicated
       replicas: 1
   
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ./data/:/var/lib/rabbitmq/
+        - ./log/:/var/log/rabbitmq
+    environment:
+        RABBITMQ_DEFAULT_USER: brian
+        RABBITMQ_DEFAULT_PASS: 123456
+    networks:
+      - reviews-network
+      
 networks:
   reviews-network:
     driver: bridge

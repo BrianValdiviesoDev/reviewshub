@@ -21,6 +21,7 @@ import { UserRole } from 'src/users/entity/users.entity';
 import { QueuesService } from 'src/queues/queues.service';
 import { Prompt } from 'src/prompts/entities/prompt.schema';
 import { PromptTypes } from 'src/prompts/entities/prompt.entity';
+import { ProducerService } from 'src/queues/producer.service';
 @Injectable()
 export class ProductsService {
   constructor(
@@ -29,6 +30,7 @@ export class ProductsService {
     @InjectModel(Prompt.name) private promptModel: Model<Prompt>,
     private requestsService: RequestsService,
     private queuesService: QueuesService,
+    private producerService: ProducerService,
   ) {}
   async create(
     createProductDto: CreateProductDto,
@@ -84,7 +86,8 @@ export class ProductsService {
       checkMatchesPrompt: new Types.ObjectId(data.checkMatchesPrompt),
     };
     const product = await this.productModel.create(data);
-    await this.findProductInMarketplaces(product._id.toString(), user);
+    this.producerService.sendToAmazonQueue({ new_product: product.name });
+    //await this.findProductInMarketplaces(product._id.toString(), user);
     return product;
   }
 

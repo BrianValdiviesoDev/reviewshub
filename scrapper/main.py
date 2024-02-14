@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from controllers import requests, logger, controls
+from services.queue import RabbitMQ_Consumer
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ app.mount("/screenshots", StaticFiles(directory="logs/screenshots"),
           name="screenshots")
 
 if __name__ == "__main__":
+    rabbitService = RabbitMQ_Consumer()
     uvicorn.run(app)
 
 # Inicia el server: uvicorn main:app --reload
