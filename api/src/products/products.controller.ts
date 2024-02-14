@@ -94,7 +94,8 @@ export class ProductsController {
 
   @UseGuards(AuthGuard)
   @Patch(':id/buildFacts')
+  @Roles(UserRole.SUPERADMIN)
   buildFacts(@Param('id') id: string, @Req() req: any) {
-    return this.productsService.buildFacts(id);
+    return this.productsService.manualBuildFacts(id, req.user);
   }
 }

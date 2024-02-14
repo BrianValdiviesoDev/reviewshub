@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -18,18 +22,16 @@ import { CreateRequestDto } from 'src/requests/dto/create-request.dto';
 import { Request } from 'src/requests/entities/requests.schema';
 import { JwtDto } from 'src/auth/dto/jwt.dto';
 import { UserRole } from 'src/users/entity/users.entity';
-import { QueuesService } from 'src/queues/queues.service';
 import { Prompt } from 'src/prompts/entities/prompt.schema';
 import { PromptTypes } from 'src/prompts/entities/prompt.entity';
 import { ProducerService } from 'src/queues/producer.service';
+import { EventTypes } from 'src/queues/queues.entities';
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
-    @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Prompt.name) private promptModel: Model<Prompt>,
     private requestsService: RequestsService,
-    private queuesService: QueuesService,
     private producerService: ProducerService,
   ) {}
   async create(
@@ -86,8 +88,8 @@ export class ProductsService {
       checkMatchesPrompt: new Types.ObjectId(data.checkMatchesPrompt),
     };
     const product = await this.productModel.create(data);
-    this.producerService.sendToAmazonQueue({ new_product: product.name });
-    //await this.findProductInMarketplaces(product._id.toString(), user);
+    await this.resetPipeline(product._id.toString(), user);
+    await this.findProductInMarketplaces(product._id.toString(), user);
     return product;
   }
 
@@ -121,9 +123,9 @@ export class ProductsService {
         };
       })
       .filter((r) => r.url);
-
-    await this.requestsService.createMany(requests);
-    await this.requestsService.startScrapper();
+    requests.forEach((r) => {
+      this.requestsService.create(r, user);
+    });
   }
 
   async findAll(user: JwtDto): Promise<ProductResponse[]> {
@@ -329,29 +331,6 @@ export class ProductsService {
     return updated;
   }
 
-  async buildFacts(productId: string): Promise<void> {
-    const product = await this.productModel.findById(productId);
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    if (product.matches) {
-      if (!product.matches.find((m) => m.percentage.length === 0)) {
-        const matchesId = product.matches.map(
-          (p) => new Types.ObjectId(p.product._id),
-        );
-        const requests = await this.requestModel.find({
-          productId: { $in: matchesId },
-          type: RequestType.GET_REVIEWS,
-          status: RequestStatus.PENDING,
-        });
-        if (requests.length === 0) {
-          this.queuesService.getProductFacts(productId);
-        }
-      }
-    }
-  }
-
   getMarketPlaceSearchUrl(marketplace: MarketPlaces, keywords: string): string {
     if (marketplace === MarketPlaces.AMAZON) {
       const searchTerm = keywords.replace(' ', '+');
@@ -375,5 +354,64 @@ export class ProductsService {
     */
 
     return '';
+  }
+
+  async manualBuildFacts(productId: string, user: JwtDto): Promise<void> {
+    if (user.rol !== UserRole.SUPERADMIN) {
+      throw new BadRequestException('You are not allowed to build facts');
+    }
+    await this.buildFacts(productId);
+  }
+
+  async buildFacts(productId: string): Promise<void> {
+    await this.producerService.sendToApiQueue({
+      event: EventTypes.GENERATE_PRODUCT_FACTS,
+      data: { product: productId },
+    });
+  }
+
+  async getNewReviews(
+    productId: string,
+    number: number,
+    user: JwtDto,
+  ): Promise<void> {
+    const product = await this.productModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(productId),
+        company: new Types.ObjectId(user.company),
+      },
+      {
+        $set: { pendingReviews: number },
+      },
+    );
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    await this.producerService.sendToApiQueue({
+      event: EventTypes.GENERATE_REVIEWS,
+      data: { product: productId },
+    });
+  }
+
+  async resetPipeline(productId: string, user: JwtDto): Promise<void> {
+    await this.productModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(productId),
+        company: new Types.ObjectId(user.company),
+      },
+      {
+        $set: {
+          pipeline: {
+            findInMarketplaces: false,
+            readProducts: false,
+            matching: false,
+            readReviews: false,
+            buildFacts: false,
+            done: false,
+          },
+        },
+      },
+    );
   }
 }

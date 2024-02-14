@@ -30,6 +30,15 @@ export enum ProductStatus {
   ERROR = 'ERROR',
 }
 
+export interface Pipeline {
+  findInMarketplaces: boolean;
+  readProducts: boolean;
+  matching: boolean;
+  readReviews: boolean;
+  buildFacts: boolean;
+  done: boolean;
+}
+
 export class ProductEntity {
   _id: Types.ObjectId;
   type: ProductType;
@@ -50,6 +59,7 @@ export class ProductEntity {
   checkMatchesPrompt: Types.ObjectId;
   factsPrompt: Types.ObjectId;
   reviewsPrompt: Types.ObjectId;
+  pipeline?: Pipeline;
 }
 
 export class ProductResponse extends ProductEntity {

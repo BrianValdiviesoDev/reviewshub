@@ -3,6 +3,7 @@ import { HydratedDocument, Types } from 'mongoose';
 import {
   MarketPlaces,
   Matches,
+  Pipeline,
   ProductEntity,
   ProductType,
 } from './products.entity';
@@ -83,6 +84,9 @@ export class Product implements ProductEntity {
     _id: false,
   })
   reviewsPrompt: Types.ObjectId;
+
+  @Prop({ type: Object })
+  pipeline?: Pipeline;
 
   @Prop({ default: Date.now() })
   createdAt: Date;

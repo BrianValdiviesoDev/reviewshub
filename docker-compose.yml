@@ -37,11 +37,11 @@ services:
       - "4000:4000"
     environment:
       - MONGO_DB_URI=${MONGO_DB_URI}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
       - SCRAPPER_URL=http://reviews-scrapper:8000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - REVIEWS_BACKOFFICE_URL=http://reviews-front:3000
+      - RABBITMQ_URI=amqp://brian:123456@localhost:5672
+      - API_QUEUE=${API_QUEUE}
+      - AMAZON_QUEUE=${AMAZON_QUEUE}
     networks:
       - reviews-network
     volumes:

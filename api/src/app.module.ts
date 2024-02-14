@@ -7,10 +7,10 @@ import { CompaniesModule } from './companies/companies.module';
 import { ProductsModule } from './products/products.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { RequestsModule } from './requests/requests.module';
-import { QueuesModule } from './queues/queues.module';
-import { BullModule } from '@nestjs/bull';
 import { LogsModule } from './logs/logs.module';
 import { PromptsModule } from './prompts/prompts.module';
+import { OpenaiModule } from './openai/openai.module';
+import { QueuesModule } from './queues/queues.module';
 
 @Module({
   imports: [
@@ -22,21 +22,16 @@ import { PromptsModule } from './prompts/prompts.module';
         uri: config.get<string>('MONGO_DB_URI'),
       }),
     }),
-    BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: Number(process.env.REDIS_PORT || 6379),
-      },
-    }),
     UsersModule,
     AuthModule,
     CompaniesModule,
     ProductsModule,
     ReviewsModule,
     RequestsModule,
-    QueuesModule,
     LogsModule,
     PromptsModule,
+    OpenaiModule,
+    QueuesModule,
   ],
   controllers: [],
   providers: [],

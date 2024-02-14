@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Allow, IsNotEmpty } from 'class-validator';
+import { ReviewType } from '../entities/reviews.entity';
 
 export class CreateReviewDto {
   @ApiProperty()
@@ -49,4 +50,8 @@ export class CreateReviewDto {
   @ApiProperty()
   @Allow()
   negativeVotes: number;
+
+  @ApiProperty()
+  @Allow()
+  type: ReviewType;
 }

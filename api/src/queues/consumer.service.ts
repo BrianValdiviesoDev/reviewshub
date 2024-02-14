@@ -1,13 +1,14 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { ConfirmChannel } from 'amqplib';
+import { LogsService } from 'src/logs/logs.service';
 
 @Injectable()
 export class ConsumerService implements OnModuleInit {
   private channelWrapper: ChannelWrapper;
-  private readonly logger = new Logger(ConsumerService.name);
-  private readonly queueName = 'api_queue';
-  constructor() {
+  private readonly queueName = process.env.API_QUEUE || 'api_queue';
+
+  constructor(private readonly logsService: LogsService) {
     const connection = amqp.connect([
       process.env.RABBITMQ_URI || 'amqp://localhost',
     ]);
@@ -21,12 +22,27 @@ export class ConsumerService implements OnModuleInit {
         await channel.consume(this.queueName, async (message) => {
           if (message) {
             const content = JSON.parse(message.content.toString());
+            this.logsService.printLog(
+              `Product has no reviews`,
+              'info',
+              undefined,
+              undefined,
+              message.content.toString(),
+              'queues',
+            );
             channel.ack(message);
           }
         });
       });
     } catch (err) {
-      this.logger.error('Error starting the consumer:', err);
+      this.logsService.printLog(
+        `Can't start consumer service`,
+        'error',
+        undefined,
+        undefined,
+        undefined,
+        'queues',
+      );
     }
   }
 }

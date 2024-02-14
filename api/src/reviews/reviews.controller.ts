@@ -16,23 +16,14 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UserRole } from 'src/users/entity/users.entity';
 import { Roles } from 'src/auth/roles.decorator';
-import { QueuesService } from 'src/queues/queues.service';
 
 @ApiBearerAuth()
 @ApiTags('reviews')
 @Controller('reviews')
 export class ReviewsController {
-  constructor(
-    private readonly reviewsService: ReviewsService,
-    private readonly queuesService: QueuesService,
-  ) {}
+  constructor(private readonly reviewsService: ReviewsService) {}
 
   @UseGuards(AuthGuard)
-  @Post()
-  create(@Body() createReviewDto: CreateReviewDto, @Req() req: any) {
-    return this.reviewsService.create(createReviewDto, req.user);
-  }
-
   @UseGuards(AuthGuard)
   @Get()
   findAll(@Req() req: any) {
@@ -67,19 +58,5 @@ export class ReviewsController {
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: any) {
     return this.reviewsService.remove(id, req.user);
-  }
-
-  @UseGuards(AuthGuard)
-  @Post('generateReviews/:id')
-  async getNewReviews(
-    @Param('id') id: string,
-    @Body() data: { number: number },
-    @Req() request: any,
-  ) {
-    return await this.queuesService.requestNewReviews(
-      id,
-      data.number,
-      request.user,
-    );
   }
 }

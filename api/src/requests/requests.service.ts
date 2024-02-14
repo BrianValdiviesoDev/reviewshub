@@ -12,13 +12,15 @@ import { HttpService } from '@nestjs/axios';
 import { JwtDto } from 'src/auth/dto/jwt.dto';
 import { UserRole } from 'src/users/entity/users.entity';
 import { Product } from 'src/products/entities/products.schema';
+import { ProducerService } from 'src/queues/producer.service';
+import { EventTypes } from 'src/queues/queues.entities';
 
 @Injectable()
 export class RequestsService {
   constructor(
     @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Product.name) private productModel: Model<Product>,
-    private readonly httpService: HttpService,
+    private producerService: ProducerService,
   ) {}
 
   async create(
@@ -40,20 +42,11 @@ export class RequestsService {
       company: user?.company,
     };
     const request = await this.requestModel.create(data);
-    await this.startScrapper();
-    return request;
-  }
-
-  async createMany(
-    createRequestDto: CreateRequestDto[],
-  ): Promise<RequestDocument[]> {
-    const insert = createRequestDto.map((req) => {
-      return {
-        ...req,
-        productId: new Types.ObjectId(req.productId),
-      };
+    await this.producerService.sendToAmazonQueue({
+      event: EventTypes.NEW_REQUEST,
+      data: { request },
     });
-    return await this.requestModel.insertMany(insert);
+    return request;
   }
 
   async findAll(user: JwtDto): Promise<RequestDocument[]> {
@@ -136,24 +129,16 @@ export class RequestsService {
   }
 
   async startScrapper(): Promise<void> {
-    const response = await this.httpService.axiosRef.post(
-      `${process.env.SCRAPPER_URL}/controls/start`,
-      {},
-    );
-    if (response.status !== 200) {
-      throw new Error('Error starting scrapper');
-    }
+    this.producerService.sendToAmazonQueue({
+      event: EventTypes.START_SCRAPPERS,
+    });
     return;
   }
 
   async stopScrapper(): Promise<void> {
-    const response = await this.httpService.axiosRef.post(
-      `${process.env.SCRAPPER_URL}/controls/stop`,
-      {},
-    );
-    if (response.status !== 200) {
-      throw new Error('Error stopping scrapper');
-    }
+    this.producerService.sendToAmazonQueue({
+      event: EventTypes.STOP_SCRAPPERS,
+    });
     return;
   }
 }

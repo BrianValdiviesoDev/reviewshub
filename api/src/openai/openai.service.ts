@@ -1,93 +1,44 @@
-import { Process, Processor, OnQueueCompleted } from '@nestjs/bull';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import OpenAI from 'openai';
-import { Job } from 'bull';
-import { Product } from 'src/products/entities/products.schema';
-import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { RequestsService } from 'src/requests/requests.service';
+import { Model, Types } from 'mongoose';
+
+import { Product } from 'src/products/entities/products.schema';
+import { LogsService } from 'src/logs/logs.service';
 import {
   RequestStatus,
   RequestType,
 } from 'src/requests/entities/request.entity';
-import { Review } from 'src/reviews/entities/reviews.schema';
 import { ReviewType } from 'src/reviews/entities/reviews.entity';
-import { LogsService } from 'src/logs/logs.service';
-import { QueuesService } from './queues.service';
-import { HttpService } from '@nestjs/axios';
+import { Review } from 'src/reviews/entities/reviews.schema';
+import { ReviewsService } from 'src/reviews/reviews.service';
+import { ProducerService } from 'src/queues/producer.service';
+import { EventTypes } from 'src/queues/queues.entities';
 import { Prompt } from 'src/prompts/entities/prompt.schema';
+import OpenAI from 'openai';
+import { RequestsService } from 'src/requests/requests.service';
+import { HttpService } from '@nestjs/axios';
+import { Request } from 'src/requests/entities/requests.schema';
 
 @Injectable()
-@Processor('openai')
-export class OpenAiQueueService {
+export class OpenaiService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
-    @InjectModel(Review.name) private reviewModel: Model<Review>,
-    private readonly requestService: RequestsService,
+    @InjectModel(Request.name) private requestModel: Model<Request>,
+    private readonly reviewService: ReviewsService,
     private readonly logsService: LogsService,
-    private readonly queuesService: QueuesService,
+    private readonly producerService: ProducerService,
+    private readonly requestService: RequestsService,
     private readonly httpService: HttpService,
   ) {}
 
-  @Process('checkProductMatches')
-  async handleCheckProductMatches(job: Job): Promise<void> {
-    this.logsService.printLog(
-      `Init checkProductMatches`,
-      'info',
-      undefined,
-      job.data.productId,
-      JSON.stringify({ jobId: job.id, matchId: job.data.matchId }),
-      'openai',
-    );
-    await this.checkProductMatches(job.data.productId, job.data.matchId, job);
-  }
-
-  @Process('getProductFacts')
-  async handleGetProductFacts(job: Job): Promise<void> {
-    this.logsService.printLog(
-      `Init getProductFacts`,
-      'info',
-      undefined,
-      job.data.productId,
-      JSON.stringify({ jobId: job.id }),
-      'openai',
-    );
-    await this.getFacts(job.data.product, job);
-  }
-
-  @Process('generateReviews')
-  async handleGenerateReviews(job: Job): Promise<void> {
-    this.logsService.printLog(
-      `Init generateReviews`,
-      'info',
-      undefined,
-      job.data.productId,
-      JSON.stringify({ jobId: job.id, number: job.data.number }),
-      'openai',
-    );
-    await this.generateReviews(job.data.product, job.data.number, job);
-  }
-
-  @OnQueueCompleted()
-  handleQueueCompleted(job: Job) {
-    this.logsService.printLog(
-      `End of job`,
-      'info',
-      undefined,
-      job.data.productId,
-      JSON.stringify({ jobId: job.id }),
-      'openai',
-    );
-  }
-
-  async checkProductMatches(productId: string, matchId: string, job: Job) {
+  async checkProductMatches(productId: string, matchId: string) {
     if (process.env.OPENAI_API_KEY === undefined) {
       this.logsService.printLog(
         `OPENAI_API_KEY is not defined`,
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id, matchId: matchId }),
+        JSON.stringify({ matchId: matchId }),
         'openai',
       );
       throw new Error('OPENAI_API_KEY is not defined');
@@ -105,7 +56,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id, matchId: matchId }),
+        JSON.stringify({ matchId: matchId }),
         'openai',
       );
       throw new NotFoundException('Product not found');
@@ -117,7 +68,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id, matchId: matchId }),
+        JSON.stringify({ matchId: matchId }),
         'openai',
       );
       throw new NotFoundException('Product has no matches');
@@ -132,7 +83,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id, matchId: matchId }),
+        JSON.stringify({ matchId: matchId }),
         'openai',
       );
       throw new NotFoundException('Product has no checkMatchesPrompt');
@@ -149,7 +100,7 @@ export class OpenAiQueueService {
       'info',
       undefined,
       productId,
-      JSON.stringify({ jobId: job.id, matchId: matchId, prompt: prompt }),
+      JSON.stringify({ matchId: matchId, prompt: prompt }),
       'openai',
     );
     const completion = await openai.chat.completions.create({
@@ -175,7 +126,6 @@ export class OpenAiQueueService {
         undefined,
         productId,
         JSON.stringify({
-          jobId: job.id,
           matchId: matchId,
           response: response,
           probability: probability,
@@ -224,7 +174,6 @@ export class OpenAiQueueService {
         undefined,
         productId,
         JSON.stringify({
-          jobId: job.id,
           matchId: matchId,
           response: completion,
         }),
@@ -233,14 +182,14 @@ export class OpenAiQueueService {
     }
   }
 
-  async getFacts(productId: string, job: Job) {
+  async getFacts(productId: string) {
     if (process.env.OPENAI_API_KEY === undefined) {
       this.logsService.printLog(
         `OPENAI_API_KEY is not defined`,
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new Error('OPENAI_API_KEY is not defined');
@@ -257,7 +206,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('Product not found');
@@ -269,13 +218,45 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('Product has no factsPrompt');
     }
 
-    const allReviews = await this.queuesService.getRelatedReviews(productId);
+    if (!product.matches || product.matches.length === 0) {
+      this.logsService.printLog(
+        `Product has not matches`,
+        'error',
+        undefined,
+        productId,
+        undefined,
+        'queues',
+      );
+      throw new NotFoundException('Product has not matches');
+    }
+
+    const matchesId = product.matches.map(
+      (p) => new Types.ObjectId(p.product._id),
+    );
+    const requests = await this.requestModel.find({
+      productId: { $in: matchesId },
+      status: RequestStatus.PENDING,
+    });
+
+    if (requests.length > 0) {
+      this.logsService.printLog(
+        `Product has pending tasks`,
+        'error',
+        undefined,
+        productId,
+        undefined,
+        'queues',
+      );
+      throw new NotFoundException('Product has pending tasks');
+    }
+
+    const allReviews = await this.reviewService.getRelatedReviews(productId);
     const reviews = allReviews.filter((r) => r.type === ReviewType.SCRAPPED);
 
     if (!reviews) {
@@ -284,22 +265,10 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('This product has no reviews');
-    }
-
-    if (process.env.OPENAI_API_KEY === undefined) {
-      this.logsService.printLog(
-        `OPENAI_API_KEY is not defined`,
-        'error',
-        undefined,
-        productId,
-        JSON.stringify({ jobId: job.id }),
-        'openai',
-      );
-      throw new Error('OPENAI_API_KEY is not defined');
     }
 
     const prompt = this.fillPrompt(
@@ -314,7 +283,7 @@ export class OpenAiQueueService {
       'info',
       undefined,
       productId,
-      JSON.stringify({ jobId: job, prompt: prompt }),
+      JSON.stringify({ prompt: prompt }),
       'openai',
     );
     const completion = await openai.chat.completions.create({
@@ -331,12 +300,11 @@ export class OpenAiQueueService {
 
     const response = completion.choices[0].message.content;
     this.logsService.printLog(
-      `OpenAI Response: ${response}`,
+      `OpenAI Response ended`,
       'result',
       undefined,
       productId,
       JSON.stringify({
-        jobId: job,
         response: response ? response.slice(0, 100) + '...' : '',
       }),
       'openai',
@@ -355,26 +323,27 @@ export class OpenAiQueueService {
           'error',
           undefined,
           productId,
-          JSON.stringify({ jobId: job.id }),
+          undefined,
           'openai',
         );
         throw new NotFoundException('Product not found');
       }
 
-      if (product?.pendingReviews > 0) {
-        this.queuesService.generateReviews(productId, product.pendingReviews);
-      }
+      await this.producerService.sendToApiQueue({
+        event: EventTypes.GENERATE_REVIEWS,
+        data: { product: productId },
+      });
     }
   }
 
-  async generateReviews(productId: string, number: number, job: Job) {
+  async generateReviews(productId: string) {
     if (process.env.OPENAI_API_KEY === undefined) {
       this.logsService.printLog(
         `OPENAI_API_KEY is not defined`,
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new Error('OPENAI_API_KEY is not defined');
@@ -391,7 +360,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('Product not found');
@@ -403,7 +372,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('Product has no facts');
@@ -415,7 +384,7 @@ export class OpenAiQueueService {
         'error',
         undefined,
         productId,
-        JSON.stringify({ jobId: job.id }),
+        undefined,
         'openai',
       );
       throw new NotFoundException('Product has no reviewsPrompt');
@@ -431,7 +400,7 @@ export class OpenAiQueueService {
       'info',
       undefined,
       productId,
-      JSON.stringify({ jobId: job.id, prompt: prompt }),
+      undefined,
       'openai',
     );
     const completion = await openai.chat.completions.create({
@@ -453,7 +422,6 @@ export class OpenAiQueueService {
       undefined,
       productId,
       JSON.stringify({
-        jobId: job.id,
         response: response ? response.slice(0, 500) + '...' : '',
       }),
       'openai',
@@ -463,12 +431,20 @@ export class OpenAiQueueService {
       const savedReviews: any = [];
       await Promise.all(
         reviews.map(async (review: any) => {
-          const result = await this.reviewModel.create({
+          const result = await this.reviewService.create({
             title: review.title,
             description: review.description,
             rating: review.rating,
-            product: new Types.ObjectId(productId),
+            product: productId,
             type: ReviewType.GENERATED,
+            url: '',
+            username: '',
+            userAvatar: '',
+            reviewDate: new Date(),
+            buyDate: new Date(),
+            images: [],
+            positiveVotes: 0,
+            negativeVotes: 0,
           });
           savedReviews.push({
             title: review.title,
@@ -485,7 +461,7 @@ export class OpenAiQueueService {
           'info',
           undefined,
           productId,
-          JSON.stringify({ jobId: job.id, webhookUrl: product.webhookUrl }),
+          JSON.stringify({ webhookUrl: product.webhookUrl }),
           'openai',
         );
 
@@ -501,7 +477,6 @@ export class OpenAiQueueService {
             undefined,
             productId,
             JSON.stringify({
-              jobId: job.id,
               webhookUrl: product.webhookUrl,
               status: response.status,
               response: response.data,
