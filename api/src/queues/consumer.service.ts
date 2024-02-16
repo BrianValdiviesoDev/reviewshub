@@ -4,6 +4,9 @@ import { ConfirmChannel } from 'amqplib';
 import { LogsService } from 'src/logs/logs.service';
 import { EventTypes, QueueMessage } from './queues.entities';
 import { OpenaiService } from 'src/openai/openai.service';
+import { ProductsService } from 'src/products/products.service';
+import { SocketGateway } from 'src/socket/socket.gateway';
+import { RequestsService } from 'src/requests/requests.service';
 
 @Injectable()
 export class ConsumerService implements OnModuleInit {
@@ -13,6 +16,9 @@ export class ConsumerService implements OnModuleInit {
   constructor(
     private readonly logsService: LogsService,
     private readonly openaiService: OpenaiService,
+    private readonly productService: ProductsService,
+    private readonly socketService: SocketGateway,
+    private readonly requestService: RequestsService,
   ) {
     const connection = amqp.connect([
       process.env.RABBITMQ_URI || 'amqp://localhost',
@@ -72,6 +78,36 @@ export class ConsumerService implements OnModuleInit {
                     await this.openaiService.generateReviews(
                       content.data.productId,
                     );
+                  }
+                  break;
+                case EventTypes.update_pipeline:
+                  if (content.data?.productId) {
+                    await this.productService.checkPipeline(
+                      content.data.productId,
+                    );
+                  }
+                  break;
+                case EventTypes.product_updated:
+                  if (content.data?.productId) {
+                    await this.socketService.emit(content.event, content.data);
+                  }
+                  break;
+                case EventTypes.new_reviews_generated:
+                  if (content.data?.productId) {
+                    await this.socketService.emit(content.event, content.data);
+                  }
+                  break;
+                case EventTypes.request_updated:
+                  if (content.data?.requestId) {
+                    await this.socketService.emit(content.event, content.data);
+                    const request = await this.requestService.findById(
+                      content.data.requestId,
+                    );
+                    if (request) {
+                      await this.productService.checkPipeline(
+                        request.productId.toString(),
+                      );
+                    }
                   }
                   break;
                 default:

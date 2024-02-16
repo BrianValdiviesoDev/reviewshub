@@ -19,7 +19,7 @@ import {
   TextField,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Matches, Product, ProductType } from '../../entities/product.entity';
+import { Matches, Pipeline, Product, ProductType } from '../../entities/product.entity';
 import {
   checkProductMatches,
   findProductInMarketplaces,
@@ -58,6 +58,8 @@ import { useAuthStore } from '../../stores/auth.store';
 import { UserRole } from '../../entities/user.entity';
 import ScrapperProgressbar from '../../components/scrapper-progressbar';
 import LogTimeline from '../../components/log-timeline';
+import useSocketListener from '../../sockets/listener';
+import { EventTypes } from '../../entities/event.entity';
 
 export default function Product({ params }: { params: { id: string } }) {
   const { user } = useAuthStore();
@@ -69,13 +71,68 @@ export default function Product({ params }: { params: { id: string } }) {
   const [rows, setRows] = useState<GridRowsProp>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [reviewsToBuy, setReviewsToBuy] = useState<number>(10);
+  const [pipeline, setPipeline] = useState<Pipeline>({
+    findInMarketplaces: false,
+    readProducts: false,
+    matching: false,
+    readReviews: false,
+    buildFacts: false,
+    done: false,    
+  });
   const router = useRouter();
+
+  const sockets = useSocketListener( (event: EventTypes, data: any) => {
+    console.log("PRODCUT")
+    console.log(event, data);
+      switch (event) {
+        case EventTypes.product_updated:
+          if(data.productId === productId) {
+            getProductInfo();
+          }
+          break;
+        case EventTypes.product_facts_generated:
+          if(data.productId === productId) {
+            getReviews();
+          }
+          break;
+        case EventTypes.request_updated:
+          updateRequest(data.requestId, data.status, data.error);
+          break;
+        case EventTypes.new_request:
+          getRequests();
+          break;
+        case EventTypes.new_reviews_generated:
+          getReviews();
+          break;
+        default:
+          break;
+      }
+  });
 
   const handleChange =
     (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? panel : false);
-    };
+  };
 
+  const updateRequest = (requestId: string, status:RequestStatus, error?:string) => {
+    const find = requests.find((r) => r._id === requestId);
+    console.log("FIND: ",find)
+    if(!find){
+      getRequests();
+      return;
+    }
+    const newRequests = requests.map((r) => {
+      if (r._id === requestId) {
+        r.status = status;
+        r.error = error;
+      }
+      return r;
+    });
+    console.log("NEW REQUESTS: ",newRequests)
+    setRequests(newRequests);
+  }
+
+  
   const findInMarkets = async () => {
     try {
       await findProductInMarketplaces(productId);
@@ -264,6 +321,12 @@ export default function Product({ params }: { params: { id: string } }) {
       getRequests();
     }
   }, [productId]);
+
+  useEffect(() => {
+    if (product) {
+      setPipeline(product.pipeline);
+    }
+  }, [product]);
 
   return (
     <>
@@ -625,28 +688,12 @@ export default function Product({ params }: { params: { id: string } }) {
                       <RequestsTable requests={requests} />
                     </AccordionDetails>
                   </Accordion>
-                  <Accordion
-                    expanded={expanded === 'log'}
-                    onChange={handleChange('log')}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      id="log-header"
-                    >
-                      <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                        Log
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <LogTimeline />
-                    </AccordionDetails>
-                  </Accordion>
                 </>
               )}
             </Grid>
             {product.type === ProductType.MANUAL && (
               <Grid item xs={3}>
-                <ScrapperProgressbar productId={productId} />
+                <ScrapperProgressbar productPipeline={product.pipeline} productId={productId} />
               </Grid>
             )}
           </Grid>

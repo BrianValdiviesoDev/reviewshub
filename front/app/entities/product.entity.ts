@@ -28,6 +28,15 @@ export enum ProductStatus {
   ERROR = 'ERROR',
 }
 
+export interface Pipeline {
+  findInMarketplaces: boolean;
+  readProducts: boolean;
+  matching: boolean;
+  readReviews: boolean;
+  buildFacts: boolean;
+  done: boolean;
+}
+
 export interface Product {
   _id: string;
   type: ProductType;
@@ -47,6 +56,7 @@ export interface Product {
   checkMatchesPrompt?: string;
   factsPrompt?: string;
   reviewsPrompt?: string;
+  pipeline: Pipeline;
   updatedAt: Date;
   createdAt: Date;
 }

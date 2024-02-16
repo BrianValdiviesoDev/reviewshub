@@ -36,27 +36,29 @@ def createRequest(request:Request):
 def setRequestInProgress(requestId:str):
     result = collection.update_one(
         {"_id": ObjectId(requestId)}, {"$set": {"status": RequestStatus.IN_PROGRESS.name}})
-    sendUpdateRequest(requestId)
+    sendUpdateRequest(requestId, RequestStatus.IN_PROGRESS.name)
     return result
 
 def completeRequest(requestId:str):
     result = collection.update_one(
         {"_id": ObjectId(requestId)}, {"$set": {"status": RequestStatus.COMPLETED.name}})
-    sendUpdateRequest(requestId)
+    sendUpdateRequest(requestId, RequestStatus.COMPLETED.name)
     return result
 
 def errorRequest(requestId:str, error:str):
     result = collection.update_one(
         {"_id": ObjectId(requestId)}, {"$set": {"status": RequestStatus.ERROR.name, "error": error}})
-    sendUpdateRequest(requestId)
+    sendUpdateRequest(requestId, RequestStatus.ERROR.name, error)
     return result
 
-def sendUpdateRequest(requestId:str):
+def sendUpdateRequest(requestId:str, status:str, error:str = None):
     rabbit = RabbitMQ_Producer()
     event:QueueEvent = {
         "event": EventTypes.request_updated.name,
         "data": {
-            "requestId": requestId
+            "requestId": requestId,
+            "status": status,
+            "error": error
         }
     }
     rabbit.send(event, api_queue)

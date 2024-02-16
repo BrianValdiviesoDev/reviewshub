@@ -29,7 +29,9 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/mongoose": "^10.0.2",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-socket.io": "^10.3.3",
     "@nestjs/swagger": "^7.1.16",
+    "@nestjs/websockets": "^10.3.3",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.3",
     "axios": "^1.6.2",
@@ -42,7 +44,9 @@
     "openai": "^4.24.0",
     "redis": "^4.6.12",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

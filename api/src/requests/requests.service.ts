@@ -46,6 +46,10 @@ export class RequestsService {
       event: EventTypes.new_request,
       data: { request },
     });
+    await this.producerService.sendToApiQueue({
+      event: EventTypes.new_request,
+      data: { requestId: request._id.toString() },
+    });
     return request;
   }
 
@@ -56,19 +60,8 @@ export class RequestsService {
     return await this.requestModel.find();
   }
 
-  async findByProduct(id: string, user: JwtDto): Promise<RequestDocument[]> {
-    if (user.rol !== UserRole.SUPERADMIN && user.rol !== UserRole.MANAGER) {
-      throw new ForbiddenException('You are not allowed to list requests');
-    }
-    const filter: any = {
-      _id: new Types.ObjectId(id),
-    };
-
-    if (user.rol === UserRole.MANAGER) {
-      filter.company = new Types.ObjectId(user.company);
-    }
-
-    const product = await this.productModel.findOne(filter);
+  async findByProduct(id: string, user?: JwtDto): Promise<RequestDocument[]> {
+    const product = await this.productModel.findById(id);
 
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -140,5 +133,9 @@ export class RequestsService {
       event: EventTypes.stop_scrappers,
     });
     return;
+  }
+
+  async findById(id: string): Promise<RequestDocument | null> {
+    return await this.requestModel.findById(id);
   }
 }

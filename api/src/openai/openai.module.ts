@@ -9,18 +9,17 @@ import { ProducerService } from 'src/queues/producer.service';
 import { HttpModule } from '@nestjs/axios';
 import { ReviewsModule } from 'src/reviews/reviews.module';
 import { RequestsModule } from 'src/requests/requests.module';
-import { ProductsModule } from 'src/products/products.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     MongooseModule.forFeature([{ name: Request.name, schema: RequestSchema }]),
     HttpModule,
-    ProductsModule,
     ReviewsModule,
     RequestsModule,
   ],
   controllers: [OpenaiController],
   providers: [ProducerService, OpenaiService, LogsService],
+  exports: [OpenaiService],
 })
 export class OpenaiModule {}

@@ -15,7 +15,7 @@ def createProduct(product):
     event:QueueEvent = {
         "event": EventTypes.new_product.name,
         "data": {
-            "product": product
+            "productId": str(result.inserted_id)
         }
     }
     rabbit.send(event)
@@ -24,6 +24,15 @@ def createProduct(product):
 def addMatchesToProduct(productId:str, matches:list):
     result = collection.update_one(
         {"_id": ObjectId(productId)}, {"$push": {"matches": {"$each": matches}}})
+    
+    rabbit = RabbitMQ_Producer()
+    event:QueueEvent = {
+            "event": EventTypes.product_updated.name,
+            "data": {
+                "productId": str(productId),
+            }
+        }
+    rabbit.send(event, api_queue)
     return result
 
 def updateProduct(productId:str, data:dict):

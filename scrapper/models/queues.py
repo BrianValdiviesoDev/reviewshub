@@ -15,6 +15,9 @@ class EventTypes(Enum):
     check_match = 'check_match',
     request_updated = 'request_updated',
     new_reviews_scrapped = 'new_reviews_scrapped',
+    update_pipeline = 'update_pipeline',
+    pipeline_updated = 'pipeline_updated',
+    product_updated = 'product_updated',
 
 class QueueEvent(BaseModel):
     event: EventTypes

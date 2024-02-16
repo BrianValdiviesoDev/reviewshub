@@ -15,8 +15,3 @@ export enum EventTypes {
   pipeline_updated = 'pipeline_updated',
   product_updated = 'product_updated',
 }
-
-export interface QueueMessage {
-  event: EventTypes;
-  data?: any;
-}

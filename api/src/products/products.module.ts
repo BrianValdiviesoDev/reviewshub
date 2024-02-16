@@ -6,6 +6,7 @@ import { Product, ProductSchema } from './entities/products.schema';
 import { RequestsModule } from 'src/requests/requests.module';
 import { Request, RequestSchema } from 'src/requests/entities/requests.schema';
 import { Prompt, PromptSchema } from 'src/prompts/entities/prompt.schema';
+import { SocketGateway } from 'src/socket/socket.gateway';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { Prompt, PromptSchema } from 'src/prompts/entities/prompt.schema';
     MongooseModule.forFeature([{ name: Prompt.name, schema: PromptSchema }]),
   ],
   controllers: [ProductsController],
-  providers: [ProductsService],
+  providers: [ProductsService, SocketGateway],
   exports: [ProductsService],
 })
 export class ProductsModule {}

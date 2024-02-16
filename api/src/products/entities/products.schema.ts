@@ -86,7 +86,7 @@ export class Product implements ProductEntity {
   reviewsPrompt: Types.ObjectId;
 
   @Prop({ type: Object })
-  pipeline?: Pipeline;
+  pipeline: Pipeline;
 
   @Prop({ default: Date.now() })
   createdAt: Date;

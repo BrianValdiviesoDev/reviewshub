@@ -18,6 +18,8 @@ import OpenAI from 'openai';
 import { RequestsService } from 'src/requests/requests.service';
 import { HttpService } from '@nestjs/axios';
 import { Request } from 'src/requests/entities/requests.schema';
+import { ProductsService } from 'src/products/products.service';
+import { Pipeline } from 'src/products/entities/products.entity';
 
 @Injectable()
 export class OpenaiService {
@@ -105,7 +107,7 @@ export class OpenaiService {
     );
     const completion = await openai.chat.completions.create({
       messages: [{ role: 'system', content: prompt }],
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-3.5-turbo-0125',
     });
 
     const response = completion.choices[0].message.content;
@@ -149,6 +151,18 @@ export class OpenaiService {
       );
 
       if (updated && updated.matches) {
+        await this.producerService.sendToApiQueue({
+          event: EventTypes.product_updated,
+          data: {
+            productId: updated._id.toString(),
+          },
+        });
+        await this.producerService.sendToApiQueue({
+          event: EventTypes.update_pipeline,
+          data: {
+            productId: updated._id.toString(),
+          },
+        });
         const updatedMatch = updated.matches.find(
           (m) => m.product.toString() === matchId,
         );
@@ -269,7 +283,7 @@ export class OpenaiService {
       status: RequestStatus.PENDING,
     });
 
-    if (requests.length > 0) {
+    if (requests.length > 1) {
       this.logsService.printLog(
         `Product has pending requests`,
         'error',
@@ -312,15 +326,8 @@ export class OpenaiService {
       'openai',
     );
     const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an assistant specialized in providing product facts. You will read user reviews, and come up with accurate product facts. You willr eceive further instructions in the user message, with your job is to fulfill.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      model: 'gpt-4-turbo-preview',
+      messages: [{ role: 'system', content: prompt }],
+      model: 'gpt-3.5-turbo-0125',
     });
 
     const response = completion.choices[0].message.content;
@@ -337,11 +344,7 @@ export class OpenaiService {
 
     if (response) {
       const facts = response.replaceAll(',', ' ').split('\n');
-      const product = await this.productModel.findOneAndUpdate(
-        { _id: productId },
-        { facts },
-        { new: true },
-      );
+      const product = await this.productModel.findById(productId);
       if (!product) {
         this.logsService.printLog(
           `Product not found updating facts`,
@@ -353,6 +356,26 @@ export class OpenaiService {
         );
         throw new NotFoundException('Product not found');
       }
+
+      const pipeline: Pipeline = {
+        ...product.pipeline,
+        buildFacts: true,
+      };
+      await this.productModel.updateOne(
+        { _id: productId },
+        { facts, pipeline },
+        { new: true },
+      );
+      await this.producerService.sendToApiQueue({
+        event: EventTypes.product_updated,
+        data: {
+          productId: productId,
+        },
+      });
+      await this.producerService.sendToApiQueue({
+        event: EventTypes.pipeline_updated,
+        data: { productId: productId, pipeline },
+      });
 
       await this.producerService.sendToApiQueue({
         event: EventTypes.product_facts_generated,
@@ -429,15 +452,8 @@ export class OpenaiService {
       'openai',
     );
     const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an assistant specialized in creating product reviews that feel natural. Users will provide you further details in their messages, your job is to fullfill their requests.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      model: 'gpt-4-turbo-preview',
+      messages: [{ role: 'system', content: prompt }],
+      model: 'gpt-4-0125-preview', //gpt-3.5-turbo-0125',
     });
 
     const response = completion.choices[0].message.content;
@@ -510,12 +526,27 @@ export class OpenaiService {
           );
         }
       }
-
-      await this.productModel.findOneAndUpdate(
+      const pendingReviews = product.pendingReviews + savedReviews.length;
+      const updatedProduct = await this.productModel.findOneAndUpdate(
         { _id: new Types.ObjectId(productId) },
-        { pendingReviews: 0 },
+        { $set: { pendingReviews, 'pipeline.done': true } },
         { new: true },
       );
+
+      await this.producerService.sendToApiQueue({
+        event: EventTypes.pipeline_updated,
+        data: {
+          productId: productId,
+          pipeline: updatedProduct?.pipeline,
+        },
+      });
+
+      await this.producerService.sendToApiQueue({
+        event: EventTypes.new_reviews_generated,
+        data: {
+          productId: productId,
+        },
+      });
     }
   }
 

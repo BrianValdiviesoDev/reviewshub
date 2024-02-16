@@ -58,7 +58,7 @@ export class ProductEntity {
   checkMatchesPrompt: Types.ObjectId;
   factsPrompt: Types.ObjectId;
   reviewsPrompt: Types.ObjectId;
-  pipeline?: Pipeline;
+  pipeline: Pipeline;
 }
 
 export class ProductResponse extends ProductEntity {

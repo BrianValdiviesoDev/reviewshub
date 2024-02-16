@@ -18,6 +18,7 @@ export interface Request {
   status: RequestStatus;
   productId: string;
   executionDate: Date;
+  error?: string;
 }
 
 export interface PutRequest {

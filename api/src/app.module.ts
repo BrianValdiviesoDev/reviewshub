@@ -11,6 +11,7 @@ import { LogsModule } from './logs/logs.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { OpenaiModule } from './openai/openai.module';
 import { QueuesModule } from './queues/queues.module';
+import { SocketModule } from './socket/socket.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { QueuesModule } from './queues/queues.module';
     PromptsModule,
     OpenaiModule,
     QueuesModule,
+    SocketModule,
   ],
   controllers: [],
   providers: [],
