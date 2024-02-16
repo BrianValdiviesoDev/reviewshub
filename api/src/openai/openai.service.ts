@@ -182,7 +182,19 @@ export class OpenaiService {
     }
   }
 
-  async getFacts(productId: string) {
+  async getFacts(productId?: string, matchId?: string) {
+    if (!productId && !matchId) {
+      this.logsService.printLog(
+        `No productId or matchId provided`,
+        'error',
+        undefined,
+        productId,
+        undefined,
+        'openai',
+      );
+      throw new NotFoundException('No productId or matchId provided');
+    }
+
     if (process.env.OPENAI_API_KEY === undefined) {
       this.logsService.printLog(
         `OPENAI_API_KEY is not defined`,
@@ -195,10 +207,22 @@ export class OpenaiService {
       throw new Error('OPENAI_API_KEY is not defined');
     }
 
-    const product = await this.productModel.findById(productId).populate({
-      path: 'factsPrompt',
-      model: Prompt.name,
-    });
+    let product: Product | null;
+    if (!productId) {
+      product = await this.productModel
+        .findOne({
+          'matches.product': new Types.ObjectId(matchId),
+        })
+        .populate({
+          path: 'factsPrompt',
+          model: Prompt.name,
+        });
+    } else {
+      product = await this.productModel.findById(productId).populate({
+        path: 'factsPrompt',
+        model: Prompt.name,
+      });
+    }
 
     if (!product) {
       this.logsService.printLog(
@@ -211,6 +235,7 @@ export class OpenaiService {
       );
       throw new NotFoundException('Product not found');
     }
+    productId = product._id.toString();
 
     if (!product.factsPrompt || !(product.factsPrompt as any)?.prompt) {
       this.logsService.printLog(
@@ -246,14 +271,14 @@ export class OpenaiService {
 
     if (requests.length > 0) {
       this.logsService.printLog(
-        `Product has pending tasks`,
+        `Product has pending requests`,
         'error',
         undefined,
         productId,
         undefined,
         'queues',
       );
-      throw new NotFoundException('Product has pending tasks');
+      throw new NotFoundException('Product has pending requests');
     }
 
     const allReviews = await this.reviewService.getRelatedReviews(productId);
@@ -330,8 +355,8 @@ export class OpenaiService {
       }
 
       await this.producerService.sendToApiQueue({
-        event: EventTypes.GENERATE_REVIEWS,
-        data: { product: productId },
+        event: EventTypes.product_facts_generated,
+        data: { productId: productId },
       });
     }
   }

@@ -8,7 +8,7 @@ import {
 import { Product } from '../entities/product.entity';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const SCRAPPER_URL = process.env.NEXT_PUBLIC_SCRAPPER_URL;
+
 
 export const findAllRequests = async (): Promise<Request[]> => {
   const response = await axios.get(`${API_URL}/requests`);
@@ -42,13 +42,13 @@ export const duplicateRequest = async (request: Request): Promise<Request> => {
 };
 
 export const stopScrapper = async (): Promise<void> => {
-  const response = await axios.post(`${SCRAPPER_URL}/controls/stop`, {});
-  return response.data;
+  //TODO send a message to the queue to stop the scrappers
+  return;
 };
 
 export const startScrapper = async (): Promise<void> => {
-  const response = await axios.post(`${SCRAPPER_URL}/controls/start`, {});
-  return response.data;
+  //TODO send a message to the queue to start the scrappers
+  return;
 };
 
 export const scrapeProductInfo = async (product: Product): Promise<Request> => {

@@ -1,9 +1,16 @@
 export enum EventTypes {
-  NEW_REQUEST = 'new_request',
-  START_SCRAPPERS = 'start_scrappers',
-  STOP_SCRAPPERS = 'stop_scrappers',
-  GENERATE_PRODUCT_FACTS = 'generate_product_facts',
-  GENERATE_REVIEWS = 'generate_reviews',
+  new_request = 'new_request',
+  start_scrappers = 'start_scrappers',
+  stop_scrappers = 'stop_scrappers',
+  generate_product_facts = 'generate_product_facts',
+  product_facts_generated = 'product_facts_generated',
+  generate_reviews = 'generate_reviews',
+  new_reviews_generated = 'new_reviews_generated',
+  new_product = 'new_product',
+  new_match = 'new_match',
+  check_match = 'check_match',
+  request_updated = 'request_updated',
+  new_reviews_scrapped = 'new_reviews_scrapped',
 }
 
 export interface QueueMessage {

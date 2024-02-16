@@ -43,7 +43,7 @@ export class RequestsService {
     };
     const request = await this.requestModel.create(data);
     await this.producerService.sendToAmazonQueue({
-      event: EventTypes.NEW_REQUEST,
+      event: EventTypes.new_request,
       data: { request },
     });
     return request;
@@ -130,14 +130,14 @@ export class RequestsService {
 
   async startScrapper(): Promise<void> {
     this.producerService.sendToAmazonQueue({
-      event: EventTypes.START_SCRAPPERS,
+      event: EventTypes.start_scrappers,
     });
     return;
   }
 
   async stopScrapper(): Promise<void> {
     this.producerService.sendToAmazonQueue({
-      event: EventTypes.STOP_SCRAPPERS,
+      event: EventTypes.stop_scrappers,
     });
     return;
   }

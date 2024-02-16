@@ -74,9 +74,9 @@ export const generateReviews = async (
   number: number,
 ): Promise<void> => {
   const response = await axios.post(
-    `${API_URL}/reviews/generateReviews/${id}`,
+    `${API_URL}/products/${id}/generateReviews`,
     {
-      number,
+      numberOfReviews: number,
     },
   );
   return response.data;

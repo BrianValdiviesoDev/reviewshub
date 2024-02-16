@@ -4,8 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from controllers import requests, logger, controls
-from services.queue import RabbitMQ_Consumer
+from controllers import logger
+from services.consumer import RabbitMQ_Consumer
+from services.producer import RabbitMQ_Producer
 
 load_dotenv()
 
@@ -32,9 +33,7 @@ app.add_middleware(
 )
 
 
-app.include_router(requests.router)
 app.include_router(logger.router)
-app.include_router(controls.router)
 
 if not os.path.exists("logs"):
     os.mkdir("logs")
@@ -45,8 +44,17 @@ if not os.path.exists("logs/screenshots"):
 app.mount("/screenshots", StaticFiles(directory="logs/screenshots"),
           name="screenshots")
 
-if __name__ == "__main__":
+
+@app.on_event("startup")
+async def startup_event():
+    global rabbitService
     rabbitService = RabbitMQ_Consumer()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    rabbitService.close_connection()
+
+if __name__ == "__main__":
     uvicorn.run(app)
 
 # Inicia el server: uvicorn main:app --reload

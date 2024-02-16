@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import { Prompt } from 'src/prompts/entities/prompt.schema';
 import { Review } from 'src/reviews/entities/reviews.schema';
 
 export enum MarketPlaces {

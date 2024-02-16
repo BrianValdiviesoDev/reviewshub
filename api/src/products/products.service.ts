@@ -333,7 +333,7 @@ export class ProductsService {
 
   getMarketPlaceSearchUrl(marketplace: MarketPlaces, keywords: string): string {
     if (marketplace === MarketPlaces.AMAZON) {
-      const searchTerm = keywords.replace(' ', '+');
+      const searchTerm = keywords.replaceAll(' ', '+');
       return `https://www.amazon.com/s?k=${searchTerm}`;
     }
     /*
@@ -365,8 +365,8 @@ export class ProductsService {
 
   async buildFacts(productId: string): Promise<void> {
     await this.producerService.sendToApiQueue({
-      event: EventTypes.GENERATE_PRODUCT_FACTS,
-      data: { product: productId },
+      event: EventTypes.generate_product_facts,
+      data: { productId: productId },
     });
   }
 
@@ -389,8 +389,8 @@ export class ProductsService {
     }
 
     await this.producerService.sendToApiQueue({
-      event: EventTypes.GENERATE_REVIEWS,
-      data: { product: productId },
+      event: EventTypes.generate_reviews,
+      data: { productId: productId },
     });
   }
 

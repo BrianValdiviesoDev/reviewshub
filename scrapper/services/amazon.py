@@ -416,7 +416,6 @@ class AmazonScrapper:
                 counter = 0
                 for review in reviews:
                     counter = counter+1
-                    print(f"reading review {counter}/{len(reviews)}")
                     try:
                         review_id = review.get_attribute('id')
                     except:

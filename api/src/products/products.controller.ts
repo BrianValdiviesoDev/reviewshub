@@ -98,4 +98,18 @@ export class ProductsController {
   buildFacts(@Param('id') id: string, @Req() req: any) {
     return this.productsService.manualBuildFacts(id, req.user);
   }
+
+  @UseGuards(AuthGuard)
+  @Post(':id/generateReviews')
+  generateReviews(
+    @Param('id') id: string,
+    @Body() data: RequestNewsReviewsDto,
+    @Req() req: any,
+  ) {
+    return this.productsService.getNewReviews(
+      id,
+      data.numberOfReviews,
+      req.user,
+    );
+  }
 }
