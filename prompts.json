@@ -1,0 +1,52 @@
+{
+    "_id": ObjectId("65ce46e7182b80005ebe7d54"),
+    "type": "GENERATE_FACTS",
+    "name": "Facts 1.0",
+    "prompt": "En base a esta batería de reviews, dame un listado de al menos 20 hechos reales lo más detallados posibles, sobre el producto. \nReviews : ##product.reviews##\n\nDamelos separados por comas, sin enumerar y sin utilizar saltos de línea.",
+    "createdAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "updatedAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "__v": NumberInt(0),
+    "model": "GPT_3_5_TURBO_1106"
+}
+{
+    "_id": ObjectId("65ce4e46182b80005ebe7d58"),
+    "type": "GENERATE_REVIEWS",
+    "name": "Reviews 1.0",
+    "prompt": "En base a estos hechos de este producto, dame un array de al menos ##product.pendingReviews## reviews en español en este formato: {title:\"title_review\", description:\"description_review\", rating:\"rating from 1 to 5} .\n\nHechos: \n##product.facts##\n\nDamelo en un string para poder transformar directamente en JSON y tratarlo como un array de objetos de reviews. Dame solamente el array no añades texto ni caracteres especiales ni antes ni después.",
+    "createdAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "updatedAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "__v": NumberInt(0),
+    "model": "gpt-3.5-turbo"
+}
+{
+    "_id": ObjectId("65ce4f05182b80005ebe7d61"),
+    "type": "CHECK_MATCHES",
+    "name": "Matches 1.0",
+    "prompt": "Dime que probabilidad hay de que estos dos productos se parezcan. Quiero que me digas una cifra entre 0 y 100 donde, donde 0 es que no se parecen en nada y 100 es que son exactamente iguales. \nProducto 1: \nName: ##product.name##\nPropiedades: ##product.properties##\nMetadata: ##product.metadata##\nPrice: ##product.price##\n\nProducto 2:\nName: ##match.name##\nProperties: ##match.properties##\nMetadata: ##match.metadata##\nPrice: ##match.price##\n\n\nDame solamente la cifra de probabilidad",
+    "createdAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "updatedAt": ISODate("2024-02-15T17:10:14.458+0000"),
+    "__v": NumberInt(0),
+    "model": "GPT_3_5_TURBO_1106"
+}
+{
+    "_id": ObjectId("65d0563f5970d56b3d6eac19"),
+    "type": "GENERATE_FACTS",
+    "name": "Facts 1.1",
+    "prompt": "Give me a list of at least 20 real, specific and detailed facts about the product based on this list of reviews:\nReviews:\n##product.reviews##\n\nGive them separated by commas, without numbering and without using line breaks.",
+    "model": "gpt-3.5-turbo",
+    "preprompt": "You are researching to purchase a product, and based on a list of real user reviews, you need to extract a list of factual information about this item. Ignore parts related to shipping, purchasing process, and seller interaction. Your focus is solely on obtaining real information, both positive and negative, about the product.",
+    "createdAt": ISODate("2024-02-17T06:37:17.660+0000"),
+    "updatedAt": ISODate("2024-02-17T06:37:17.661+0000"),
+    "__v": NumberInt(0)
+}
+{
+    "_id": ObjectId("65d05eb2358993b31fff44bd"),
+    "type": "GENERATE_REVIEWS",
+    "name": "Reviews 1.1",
+    "prompt": "Based on a list of real facts, generates an array of ##product.pendingReviews## reviews in SPANISH.\nFacts:\n##product.facts##\n\nEach reviews must have this format: {title:\"title_review\", description:\"description_review\", rating:\"rating from 1 to 5} .\n\nGive me it in a string format prepared for transform it in a JSON and manage as a objects array. Give me only the array and no add any characters at start or end.",
+    "model": "gpt-3.5-turbo",
+    "preprompt": "A review should be a buyer's point of view, detailed and specific.",
+    "createdAt": ISODate("2024-02-17T06:57:40.131+0000"),
+    "updatedAt": ISODate("2024-02-17T06:57:40.131+0000"),
+    "__v": NumberInt(0)
+}
