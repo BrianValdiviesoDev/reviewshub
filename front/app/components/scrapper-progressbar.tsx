@@ -19,16 +19,25 @@ import { Pipeline } from '../entities/product.entity';
 import useSocketListener from '../sockets/listener';
 import { EventTypes } from '../entities/event.entity';
 import Image from 'next/image';
+import { Box, Grid, LinearProgress, Typography } from '@mui/material';
 
 interface ScrapperProgressbarProps {
   productId: string;
   productPipeline?: Pipeline;
+  totalRequests?: number;
+  pendingRequests?: number;
 }
 
 export default function ScrapperProgressbar({
   productId,
   productPipeline,
+  totalRequests,
+  pendingRequests,
 }: ScrapperProgressbarProps) {
+  const [step, setStep] = useState<string>()
+  const [icon, setIcon] = useState<string>()
+  const [progress, setProgress] = useState<number>(0);
+  const [totalSteps, setTotalSteps] = useState<number>(33);
   const [pipeline, setPipeline] = useState<Pipeline>(
     productPipeline || {
       findInMarketplaces: false,
@@ -46,31 +55,81 @@ export default function ScrapperProgressbar({
     }
   });
 
-  const getIcon =()=>{
+  const getStep =()=>{
+    console.log(pipeline)
     if(!pipeline.findInMarketplaces){
-      return <Image src="/find-in-marketplaces.gif" alt={''} width={200} height={200}/>
+      setIcon('/find-in-marketplaces.gif')
+      setStep('Buscando en marketplaces...')
+      return;
     }
 
     if(!pipeline.readProducts && !pipeline.matching){
-      return <Image src="/reading-products-2.gif" alt={''} width={200} height={200}/>
+      setIcon('/reading-products.gif')
+      setStep('Comparando productos...')
+      return;
     }
 
     if(!pipeline.readReviews){
-      return <Image src="/reading-reviews.gif" alt={''} width={200} height={200}/>
+      setIcon('/reading-reviews.gif')
+      setStep('Leyendo reviews...')
+      return;
     }
 
     if(!pipeline.buildFacts){
-      return <Image src="/building-facts.gif" alt={''} width={200} height={200}/>
+      setIcon('/building-facts.gif')
+      setStep('Obteniendo conclusiones...')
+      return;
     }
 
     if(!pipeline.done){
-      return <Image src="/generating-reviews.gif" alt={''} width={200} height={200}/>
+      setIcon('/generating-reviews.gif')
+      setStep('Generando reviews...')
+      return;
     }
+
+    setIcon(undefined)
+    setStep(undefined)
   }
+
+  useEffect(() => {
+    getStep();
+  }, [pipeline]);
+
+  useEffect(() => {
+    //Total = requests + build facts + generate reviews 
+    const totalSteps = 2 + (totalRequests || 0)
+    console.log('totalSteps', totalSteps)
+    let progress = (totalRequests || 0) - (pendingRequests || 0);
+    if(pipeline.buildFacts){
+      progress += 1;
+    }
+    if(pipeline.done){
+      progress = totalSteps;
+    }
+
+    console.log('progress', progress)
+    setTotalSteps(totalSteps)
+    progress = (progress / totalSteps) * 100;
+    console.log('progress', progress)
+    setProgress(progress);
+  }, [totalRequests, pendingRequests, pipeline]);
 
   return (
     <>
-    {getIcon()}
+    {icon && step && !pipeline.done && (
+      <Grid container spacing={2} direction="column"
+      alignItems="center"
+      justifyContent="center">
+      <Grid item xs={12}>
+        <Typography variant='h3'>{step}</Typography>
+      </Grid>
+      
+      <Grid item xs={12}>
+        <Image src={icon} alt={''} width={200} height={200}/>
+      </Grid>
+    </Grid>
+    )}
+    
     </>
 
   );

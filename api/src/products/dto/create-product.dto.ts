@@ -8,7 +8,7 @@ export class CreateProductDto {
 
   @ApiProperty()
   @Allow()
-  sku?: string;
+  price?: number;
 
   @ApiProperty()
   @Allow()

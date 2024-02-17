@@ -46,6 +46,9 @@ export class ProductsService {
   ): Promise<ProductDocument> {
     let data: any = {
       ...createProductDto,
+      price: createProductDto.price
+        ? createProductDto.price.toString()
+        : undefined,
       company: user.company ? new Types.ObjectId(user.company) : undefined,
       pendingReviews,
       webhookUrl,

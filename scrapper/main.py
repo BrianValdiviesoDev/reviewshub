@@ -4,11 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from services.consumer import RabbitMQ_Consumer
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 load_dotenv()
 
+logging.info('Waiting for messages. To exit, press CTRL+C')
 
-app = FastAPI()
+app = FastAPI(debug=True)
 
 
 origins = [
@@ -25,14 +29,9 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
-    global rabbitService
-    rabbitService = RabbitMQ_Consumer()
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    rabbitService.close_connection()
+global rabbitService
+rabbitService = RabbitMQ_Consumer()
 
 if __name__ == "__main__":
     uvicorn.run(app)

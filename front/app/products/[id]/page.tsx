@@ -348,6 +348,8 @@ export default function Product({ params }: { params: { id: string } }) {
                 <ScrapperProgressbar
                   productPipeline={product.pipeline}
                   productId={productId}
+                  totalRequests={requests.length}
+                  pendingRequests={requests.filter(r=>r.status === RequestStatus.PENDING).length}
                 />
               </Grid>
             )}

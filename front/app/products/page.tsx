@@ -153,10 +153,16 @@ export default function Products() {
                 pageSize: 50,
               },
             },
+            filter: {
+              filterModel: {
+                items: [{ field: 'type', operator: 'contains', value: 'MANUAL' }],
+              },
+            },
           }}
           pageSizeOptions={[5]}
           slots={{ toolbar: GridToolbar }}
           disableRowSelectionOnClick
+
         />
       ) : (
         <Alert severity="info">No products found</Alert>

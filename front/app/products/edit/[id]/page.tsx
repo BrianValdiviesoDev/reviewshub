@@ -177,6 +177,16 @@ export default function ProductForm({ params }: { params: { id: string } }) {
                 }
                 margin="normal"
               />
+              <TextField
+                    label="Price"
+                    fullWidth
+                    name="product.price"
+                    value={values.product.price}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    margin="normal"
+                    type="number"
+                  />
 
               <Box>
                 <Typography>Properties</Typography>

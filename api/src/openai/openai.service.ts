@@ -23,6 +23,10 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 
 @Injectable()
 export class OpenaiService {
+  match_threshold: number = process.env.MATCH_THRESHOLD
+    ? parseInt(process.env.MATCH_THRESHOLD)
+    : 85;
+
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Request.name) private requestModel: Model<Request>,
@@ -128,70 +132,112 @@ export class OpenaiService {
     //TODO save token cost
 
     if (response) {
-      let probability: string | number;
+      console.log('========= CHECK MATCHES RESPONSE =========');
+      console.log(response);
+      console.log('========= CHECK MATCHES RESPONSE=========');
+      let probability: number | undefined;
 
-      try {
-        probability = parseInt(response, 10);
-      } catch (e) {
-        probability = 'Error: ' + response;
+      if (response.length > 2) {
+        console.log('Response is too long, truncating');
+        try {
+          const json = JSON.parse(response);
+          if (json.probability) {
+            probability = parseInt(json.probability);
+          } else if (json.response) {
+            probability = parseInt(json.response);
+          }
+        } catch (e) {
+          console.log('Error parsing json probability', e);
+          this.logsService.printLog(
+            `OpenAI error parsing json probability`,
+            'error',
+            undefined,
+            productId,
+            JSON.stringify({
+              matchId: matchId,
+              response: response,
+              error: e,
+            }),
+            'openai',
+          );
+        }
+      } else {
+        try {
+          probability = parseInt(response, 10);
+        } catch (e) {
+          console.log('Error parsing probability', e);
+          this.logsService.printLog(
+            `OpenAI error parsing probability`,
+            'error',
+            undefined,
+            productId,
+            JSON.stringify({
+              matchId: matchId,
+              response: response,
+              error: e,
+            }),
+            'openai',
+          );
+        }
       }
 
-      this.logsService.printLog(
-        `OpenAI ended`,
-        'result',
-        undefined,
-        productId,
-        JSON.stringify({
-          matchId: matchId,
-          response: response,
-          probability: probability,
-        }),
-        'openai',
-      );
-
-      product.matches = product.matches.map((m) => {
-        if (m.product.toString() === matchId) {
-          if (!m.percentage) {
-            m.percentage = [];
-          }
-          m.percentage = [...m.percentage, probability];
-        }
-        return m;
-      });
-      const updated = await this.productModel.findOneAndUpdate(
-        { _id: productId },
-        { matches: product.matches },
-        { new: true },
-      );
-
-      if (updated && updated.matches) {
-        await this.producerService.sendToApiQueue({
-          event: EventTypes.product_updated,
-          data: {
-            productId: updated._id.toString(),
-          },
-        });
-        await this.producerService.sendToApiQueue({
-          event: EventTypes.update_pipeline,
-          data: {
-            productId: updated._id.toString(),
-          },
-        });
-        const updatedMatch = updated.matches.find(
-          (m) => m.product.toString() === matchId,
+      if (typeof probability === 'number') {
+        this.logsService.printLog(
+          `OpenAI ended`,
+          'result',
+          undefined,
+          productId,
+          JSON.stringify({
+            matchId: matchId,
+            response: response,
+          }),
+          'openai',
         );
 
-        if (updatedMatch && updatedMatch.percentage.length > 0) {
-          const average =
-            updatedMatch.percentage.reduce((a, b) => a + b) /
-            updatedMatch.percentage.length;
-          if (average > 80) {
-            await this.requestService.create({
-              url: match.originUrl,
-              type: RequestType.GET_REVIEWS,
-              status: RequestStatus.PENDING,
-              productId: matchId,
-            });
+        product.matches = product.matches.map((m) => {
+          if (m.product.toString() === matchId) {
+            if (!m.percentage) {
+              m.percentage = [];
+            }
+            m.percentage = [...m.percentage, probability];
+          }
+          return m;
+        });
+        const updated = await this.productModel.findOneAndUpdate(
+          { _id: productId },
+          { matches: product.matches },
+          { new: true },
+        );
+
+        if (updated && updated.matches) {
+          await this.producerService.sendToApiQueue({
+            event: EventTypes.product_updated,
+            data: {
+              productId: updated._id.toString(),
+            },
+          });
+          await this.producerService.sendToApiQueue({
+            event: EventTypes.update_pipeline,
+            data: {
+              productId: updated._id.toString(),
+            },
+          });
+          const updatedMatch = updated.matches.find(
+            (m) => m.product.toString() === matchId,
+          );
+
+          if (updatedMatch && updatedMatch.percentage.length > 0) {
+            const average =
+              updatedMatch.percentage.reduce((a, b) => a + b) /
+              updatedMatch.percentage.length;
+            if (average > this.match_threshold) {
+              await this.requestService.create({
+                url: match.originUrl,
+                type: RequestType.GET_REVIEWS,
+                status: RequestStatus.PENDING,
+                productId: matchId,
+              });
+            }
           }
         }
       }
@@ -370,6 +416,9 @@ export class OpenaiService {
     );
 
     if (response) {
+      console.log('========= FACTS RESPONSE =========');
+      console.log(response);
+      console.log('========= FACTS RESPONSE =========');
       const facts = response.replaceAll(',', ' ').split('\n');
       const product = await this.productModel.findById(productId);
       if (!product) {
@@ -510,85 +559,92 @@ export class OpenaiService {
       'openai',
     );
     if (response) {
-      const reviews = JSON.parse(response);
-      const savedReviews: any = [];
-      await Promise.all(
-        reviews.map(async (review: any) => {
-          const result = await this.reviewService.create({
-            title: review.title,
-            description: review.description,
-            rating: review.rating,
-            product: productId,
-            type: ReviewType.GENERATED,
-            url: '',
-            username: '',
-            userAvatar: '',
-            reviewDate: new Date(),
-            buyDate: new Date(),
-            images: [],
-            positiveVotes: 0,
-            negativeVotes: 0,
-          });
-          savedReviews.push({
-            title: review.title,
-            description: review.description,
-            rating: review.rating,
-          });
-          return result;
-        }),
-      );
-
-      if (product.webhookUrl) {
-        this.logsService.printLog(
-          `Calling webhookUrl`,
-          'info',
-          undefined,
-          productId,
-          JSON.stringify({ webhookUrl: product.webhookUrl }),
-          'openai',
+      console.log('========= REVIEWS RESPONSE =========');
+      console.log(response);
+      console.log('========= REVIEWS RESPONSE =========');
+      try {
+        const reviews = JSON.parse(response);
+        const savedReviews: any = [];
+        await Promise.all(
+          reviews.map(async (review: any) => {
+            const result = await this.reviewService.create({
+              title: review.title,
+              description: review.description,
+              rating: review.rating,
+              product: productId,
+              type: ReviewType.GENERATED,
+              url: '',
+              username: '',
+              userAvatar: '',
+              reviewDate: new Date(),
+              buyDate: new Date(),
+              images: [],
+              positiveVotes: 0,
+              negativeVotes: 0,
+            });
+            savedReviews.push({
+              title: review.title,
+              description: review.description,
+              rating: review.rating,
+            });
+            return result;
+          }),
         );
 
-        const response = await this.httpService.axiosRef.post(
-          product.webhookUrl,
-          { product: productId, reviews: savedReviews },
-        );
-
-        if (response.status > 299) {
+        if (product.webhookUrl) {
           this.logsService.printLog(
-            `Error calling webhookUrl`,
-            'error',
+            `Calling webhookUrl`,
+            'info',
             undefined,
             productId,
-            JSON.stringify({
-              webhookUrl: product.webhookUrl,
-              status: response.status,
-              response: response.data,
-            }),
+            JSON.stringify({ webhookUrl: product.webhookUrl }),
             'openai',
           );
+
+          const response = await this.httpService.axiosRef.post(
+            product.webhookUrl,
+            { product: productId, reviews: savedReviews },
+          );
+
+          if (response.status > 299) {
+            this.logsService.printLog(
+              `Error calling webhookUrl`,
+              'error',
+              undefined,
+              productId,
+              JSON.stringify({
+                webhookUrl: product.webhookUrl,
+                status: response.status,
+                response: response.data,
+              }),
+              'openai',
+            );
+          }
         }
+        const pendingReviews = product.pendingReviews + savedReviews.length;
+        const updatedProduct = await this.productModel.findOneAndUpdate(
+          { _id: new Types.ObjectId(productId) },
+          { $set: { pendingReviews, 'pipeline.done': true } },
+          { new: true },
+        );
+
+        await this.producerService.sendToApiQueue({
+          event: EventTypes.pipeline_updated,
+          data: {
+            productId: productId,
+            pipeline: updatedProduct?.pipeline,
+          },
+        });
+
+        await this.producerService.sendToApiQueue({
+          event: EventTypes.new_reviews_generated,
+          data: {
+            productId: productId,
+          },
+        });
+      } catch (e) {
+        console.error('Error parsing reviews', e);
       }
-      const pendingReviews = product.pendingReviews + savedReviews.length;
-      const updatedProduct = await this.productModel.findOneAndUpdate(
-        { _id: new Types.ObjectId(productId) },
-        { $set: { pendingReviews, 'pipeline.done': true } },
-        { new: true },
-      );
-
-      await this.producerService.sendToApiQueue({
-        event: EventTypes.pipeline_updated,
-        data: {
-          productId: productId,
-          pipeline: updatedProduct?.pipeline,
-        },
-      });
-
-      await this.producerService.sendToApiQueue({
-        event: EventTypes.new_reviews_generated,
-        data: {
-          productId: productId,
-        },
-      });
     }
   }
 
@@ -603,7 +659,7 @@ export class OpenaiService {
       .replaceAll('##match.name##', match?.name || '')
       .replaceAll('##product.properties##', product.properties || '')
       .replaceAll('##match.properties##', match?.properties || '')
-      .replaceAll('##product.price##', product.price || '')
+      .replaceAll('##product.price##', product.price?.toString() || '')
       .replaceAll('##match.price##', match?.price || '')
       .replaceAll('##product.metadata##', product.metadata)
       .replaceAll('##match.metadata##', match?.metadata || '')

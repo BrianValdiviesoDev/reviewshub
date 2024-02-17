@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-
+import logging
 # Obtener el valor de la variable de entorno DEBUG (si está definida)
 debug_mode = os.getenv("DEBUG", default="false").lower() == "true"
 
@@ -16,6 +16,6 @@ def print_log(message: str, level: str = "info", requestID: str = None, productI
         os.makedirs("logs")
     with open(f"logs/{date}.txt", "a") as f:
         f.write(log)
-
+    logging.info(log)
     if debug_mode:
         print(log)
