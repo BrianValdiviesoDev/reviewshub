@@ -18,6 +18,7 @@ import { getProduct } from '../api/products.service';
 import { Pipeline } from '../entities/product.entity';
 import useSocketListener from '../sockets/listener';
 import { EventTypes } from '../entities/event.entity';
+import Image from 'next/image';
 
 interface ScrapperProgressbarProps {
   productId: string;
@@ -28,85 +29,49 @@ export default function ScrapperProgressbar({
   productId,
   productPipeline,
 }: ScrapperProgressbarProps) {
-  const [pipeline, setPipeline] = useState<Pipeline>(productPipeline ||{
-    findInMarketplaces: false,
-    readProducts: false,
-    matching: false,
-    readReviews: false,
-    buildFacts: false,
-    done: false,
+  const [pipeline, setPipeline] = useState<Pipeline>(
+    productPipeline || {
+      findInMarketplaces: false,
+      readProducts: false,
+      matching: false,
+      readReviews: false,
+      buildFacts: false,
+      done: false,
+    },
+  );
+
+  const sockets = useSocketListener((event: EventTypes, data: any) => {
+    if (event === EventTypes.pipeline_updated && data.productId === productId) {
+      setPipeline(data.pipeline as Pipeline);
+    }
   });
 
-  const sockets = useSocketListener( (event: EventTypes, data: any) => {
-      if(event === EventTypes.pipeline_updated && data.productId === productId){
-        setPipeline(data.pipeline as Pipeline)
-      }
-  });
+  const getIcon =()=>{
+    if(!pipeline.findInMarketplaces){
+      return <Image src="/find-in-marketplaces.gif" alt={''} width={200} height={200}/>
+    }
+
+    if(!pipeline.readProducts && !pipeline.matching){
+      return <Image src="/reading-products-2.gif" alt={''} width={200} height={200}/>
+    }
+
+    if(!pipeline.readReviews){
+      return <Image src="/reading-reviews.gif" alt={''} width={200} height={200}/>
+    }
+
+    if(!pipeline.buildFacts){
+      return <Image src="/building-facts.gif" alt={''} width={200} height={200}/>
+    }
+
+    if(!pipeline.done){
+      return <Image src="/generating-reviews.gif" alt={''} width={200} height={200}/>
+    }
+  }
 
   return (
     <>
-      <Timeline position="left">
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.findInMarketplaces ? 'filled' : 'outlined'}
-            />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Find in marketplaces</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.readProducts ? 'filled' : 'outlined'}
-            />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Read products</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.matching ? 'filled' : 'outlined'}
-            />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Matching</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.readReviews ? 'filled' : 'outlined'}
-            />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Read reviews</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.buildFacts ? 'filled' : 'outlined'}
-            />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Build facts</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot
-              color="success"
-              variant={pipeline.done ? 'filled' : 'outlined'}
-            />
-          </TimelineSeparator>
-          <TimelineContent>Done</TimelineContent>
-        </TimelineItem>
-      </Timeline>
-      
+    {getIcon()}
     </>
+
   );
 }

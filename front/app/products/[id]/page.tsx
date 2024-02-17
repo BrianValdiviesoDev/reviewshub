@@ -17,9 +17,15 @@ import {
   ListItemText,
   ListItem,
   TextField,
+  Divider,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Matches, Pipeline, Product, ProductType } from '../../entities/product.entity';
+import {
+  Matches,
+  Pipeline,
+  Product,
+  ProductType,
+} from '../../entities/product.entity';
 import {
   checkProductMatches,
   findProductInMarketplaces,
@@ -57,9 +63,10 @@ import RequestsTable from '../../components/request-table';
 import { useAuthStore } from '../../stores/auth.store';
 import { UserRole } from '../../entities/user.entity';
 import ScrapperProgressbar from '../../components/scrapper-progressbar';
-import LogTimeline from '../../components/log-timeline';
 import useSocketListener from '../../sockets/listener';
 import { EventTypes } from '../../entities/event.entity';
+import EditIcon from '@mui/icons-material/Edit';
+import ReviewCard from '../../components/review-card';
 
 export default function Product({ params }: { params: { id: string } }) {
   const { user } = useAuthStore();
@@ -77,47 +84,51 @@ export default function Product({ params }: { params: { id: string } }) {
     matching: false,
     readReviews: false,
     buildFacts: false,
-    done: false,    
+    done: false,
   });
   const router = useRouter();
 
-  const sockets = useSocketListener( (event: EventTypes, data: any) => {
-    console.log("PRODCUT")
+  const sockets = useSocketListener((event: EventTypes, data: any) => {
+    console.log('PRODCUT');
     console.log(event, data);
-      switch (event) {
-        case EventTypes.product_updated:
-          if(data.productId === productId) {
-            getProductInfo();
-          }
-          break;
-        case EventTypes.product_facts_generated:
-          if(data.productId === productId) {
-            getReviews();
-          }
-          break;
-        case EventTypes.request_updated:
-          updateRequest(data.requestId, data.status, data.error);
-          break;
-        case EventTypes.new_request:
-          getRequests();
-          break;
-        case EventTypes.new_reviews_generated:
+    switch (event) {
+      case EventTypes.product_updated:
+        if (data.productId === productId) {
+          getProductInfo();
+        }
+        break;
+      case EventTypes.product_facts_generated:
+        if (data.productId === productId) {
           getReviews();
-          break;
-        default:
-          break;
-      }
+        }
+        break;
+      case EventTypes.request_updated:
+        updateRequest(data.requestId, data.status, data.error);
+        break;
+      case EventTypes.new_request:
+        getRequests();
+        break;
+      case EventTypes.new_reviews_generated:
+        getReviews();
+        break;
+      default:
+        break;
+    }
   });
 
   const handleChange =
     (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? panel : false);
-  };
+    };
 
-  const updateRequest = (requestId: string, status:RequestStatus, error?:string) => {
+  const updateRequest = (
+    requestId: string,
+    status: RequestStatus,
+    error?: string,
+  ) => {
     const find = requests.find((r) => r._id === requestId);
-    console.log("FIND: ",find)
-    if(!find){
+    console.log('FIND: ', find);
+    if (!find) {
       getRequests();
       return;
     }
@@ -128,11 +139,10 @@ export default function Product({ params }: { params: { id: string } }) {
       }
       return r;
     });
-    console.log("NEW REQUESTS: ",newRequests)
+    console.log('NEW REQUESTS: ', newRequests);
     setRequests(newRequests);
-  }
+  };
 
-  
   const findInMarkets = async () => {
     try {
       await findProductInMarketplaces(productId);
@@ -332,184 +342,137 @@ export default function Product({ params }: { params: { id: string } }) {
     <>
       {product ? (
         <>
-          <Grid container spacing={2} mb={6}>
-            <Grid item xs={8}>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <img src={product.image} style={{ width: '100%' }} />
-                </Grid>
-                <Grid item xs={8}>
-                  <Typography>{product.name}</Typography>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={4}>
-              <Grid container justifyContent="flex-end" spacing={2}>
-                <Grid item>
-                  <Button
-                    variant="contained"
-                    onClick={() => {
-                      router.push(`/products/edit/${productId}`);
-                    }}
-                    disabled={
-                      product.type === ProductType.MANUAL ? false : true
-                    }
-                  >
-                    Edit
-                  </Button>
-                </Grid>
-                <Grid item>
-                  <Button variant="contained" size="small">
-                    <Link href={product.originUrl} target="_blank">
-                      Visit
-                    </Link>
-                  </Button>
-                </Grid>
-                {user?.rol === UserRole.SUPERADMIN && (
-                  <Grid item>
-                    <Button
-                      variant="contained"
-                      onClick={() => {
-                        findInMarkets();
-                      }}
-                      disabled={
-                        !requests.find(
-                          (r) => r.status === RequestStatus.PENDING,
-                        ) && product.type === ProductType.MANUAL
-                          ? false
-                          : true
-                      }
-                    >
-                      Find in Marketplaces
-                    </Button>
-                  </Grid>
-                )}
-              </Grid>
-            </Grid>
-          </Grid>
           <Grid container spacing={2}>
-            <Grid item xs={9}>
-              <Accordion
-                expanded={expanded === 'properties'}
-                onChange={handleChange('properties')}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  id="properties-header"
-                >
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>
+            {product.type === ProductType.MANUAL && requests.length > 0 &&(
+              <Grid item xs={12}>
+                <ScrapperProgressbar
+                  productPipeline={product.pipeline}
+                  productId={productId}
+                />
+              </Grid>
+            )}
+            <Grid item xs={6}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography sx={{ fontWeight: 'bold' }}>
+                    {product.name}{' '}
+                    <Link
+                      href={product.originUrl}
+                      target="_blank"
+                      color="#FF6000"
+                    >
+                      <VisibilityIcon sx={{ color: '#FF6000' }} />
+                    </Link>
+                    {product.type === ProductType.MANUAL && (
+                      <Link href={`/products/edit/${productId}`}>
+                        <EditIcon sx={{ color: '#FF6000' }} />
+                      </Link>
+                    )}
+                  </Typography>
+                  <Divider />
+                </CardContent>
+                <CardContent sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
+                  <Typography mt={2} sx={{ fontWeight: 'bold' }}>
                     Properties
                   </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {user?.rol === UserRole.SUPERADMIN && (
-                    <Button
-                      variant="contained"
-                      onClick={() => scrapeProductInfo(product)}
-                      disabled={
-                        requests.find((r) => r.status === RequestStatus.PENDING)
-                          ? true
-                          : false
-                      }
-                    >
-                      Scrape info
-                    </Button>
-                  )}
+                  <Typography mb={2}>{product?.properties}</Typography>
+                  <Typography>
+                    <b>Marketplace</b>: {product?.marketplace || '--'}
+                  </Typography>
+                  <Typography>
+                    <b>Price</b>: {product?.price || '--'}
+                  </Typography>
+                  <Typography>
+                    <b>Rating</b>: {product?.rating || '--'}
+                  </Typography>
+                  <Typography>
+                    <b>Reviews</b>: {product?.reviews || '--'}
+                  </Typography>
+                  <Typography>
+                    <b>Updated at</b>:{' '}
+                    {product?.updatedAt
+                      ? moment(product.updatedAt).format('YYYY-MM-DD HH:mm')
+                      : '--'}
+                  </Typography>
+                  {user?.rol === UserRole.SUPERADMIN &&
+                    product.type === ProductType.SCRAPPED && (
+                      <Button
+                        variant="contained"
+                        onClick={() => scrapeProductInfo(product)}
+                        disabled={
+                          requests.find(
+                            (r) => r.status === RequestStatus.PENDING,
+                          )
+                            ? true
+                            : false
+                        }
+                        sx={{ marginTop: 2 }}
+                      >
+                        Scrape info
+                      </Button>
+                    )}
+                </CardContent>
+              </Card>
+            </Grid>
 
-                  <Grid container spacing={2} mb={6}>
-                    <Grid item xs={12}>
-                      <Typography>
-                        Marketplace: {product?.marketplace || '--'}
-                      </Typography>
-                      <Typography>Price: {product?.price || '--'}</Typography>
-                      <Typography>Rating: {product?.rating || '--'}</Typography>
-                      <Typography>
-                        Reviews: {product?.reviews || '--'}
-                      </Typography>
-                      <Typography>
-                        Updated at:{' '}
-                        {product?.updatedAt
-                          ? moment(product.updatedAt).format('YYYY-MM-DD HH:mm')
-                          : '--'}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-
-                  <Grid container spacing={2} mb={6}>
-                    <Grid item xs={12}>
-                      <Typography>Metadata</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      {product.metadata &&
-                        Object.keys(product.metadata).map(
-                          (meta: any, i: number) => {
-                            let data = '';
-                            try {
-                              data = JSON.stringify(product.metadata[meta]);
-                            } catch (e) {
-                              console.error(e);
-                            }
-                            return (
-                              <Typography key={i}>
-                                {meta}: {data}
-                              </Typography>
-                            );
-                          },
-                        )}
-                    </Grid>
-                  </Grid>
-
-                  <Grid container spacing={2} mb={6}>
-                    <Grid item xs={12}>
-                      <Typography variant="h4">Properties</Typography>
-                      <Typography>{product?.properties}</Typography>
-                    </Grid>
-                  </Grid>
-                </AccordionDetails>
-              </Accordion>
-
-              <Accordion
-                expanded={expanded === 'reviews'}
-                onChange={handleChange('reviews')}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  id="reviews-header"
-                >
-                  <Typography sx={{ width: '33%', flexShrink: 0 }}>
+            <Grid item xs={6}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography sx={{ fontWeight: 'bold' }}>
+                    {' '}
                     Reviews ({reviews.length})
                   </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
+                  <Divider />
+                </CardContent>
+                <CardContent sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
                   {product.type === ProductType.MANUAL &&
                     product.facts &&
                     product.facts.length > 0 && (
-                      <>
-                        <TextField
-                          id="outlined-number"
-                          label="Quantity"
-                          type="number"
-                          value={reviewsToBuy}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          onChange={(e) =>
-                            setReviewsToBuy(parseInt(e.target.value))
-                          }
-                        />
-                        <Button
-                          variant="contained"
-                          onClick={() => buyReviews()}
-                          disabled={product.facts ? false : true}
-                        >
-                          Buy reviews
-                        </Button>
-                      </>
+                      <Grid container spacing={2} mt={2} mb={2}>
+                        <Grid item>
+                          <TextField
+                            id="outlined-number"
+                            label="Quantity"
+                            type="number"
+                            value={reviewsToBuy}
+                            InputLabelProps={{
+                              shrink: true,
+                            }}
+                            onChange={(e) =>
+                              setReviewsToBuy(parseInt(e.target.value))
+                            }
+                          />
+                        </Grid>
+                        <Grid item>
+                          <Button
+                            variant="contained"
+                            onClick={() => buyReviews()}
+                            disabled={product.facts ? false : true}
+                          >
+                            Buy reviews
+                          </Button>
+                        </Grid>
+                      </Grid>
                     )}
+                  <Typography>
+                    Scrapped reviews:{' '}
+                    {
+                      reviews.filter((r) => r.type === ReviewType.SCRAPPED)
+                        .length
+                    }
+                    {'  '}Generated reviews:{' '}
+                    {
+                      reviews.filter((r) => r.type === ReviewType.GENERATED)
+                        .length
+                    }
+                  </Typography>
 
-                  {user?.rol === UserRole.SUPERADMIN && (
-                    <>
+                  {reviews?.map((review, i) => (
+                    <ReviewCard review={review} key={i} />
+                  ))}
+
+                  {user?.rol === UserRole.SUPERADMIN &&
+                    product.type === ProductType.SCRAPPED && (
                       <Button
                         variant="contained"
                         onClick={() => scrapeReviews(product)}
@@ -523,179 +486,112 @@ export default function Product({ params }: { params: { id: string } }) {
                       >
                         Scrape Reviews
                       </Button>
-
-                      <Typography>
-                        Scrapped reviews:{' '}
-                        {
-                          reviews.filter((r) => r.type === ReviewType.SCRAPPED)
-                            .length
-                        }
-                      </Typography>
-                      <Typography>
-                        Generated reviews:{' '}
-                        {
-                          reviews.filter((r) => r.type === ReviewType.GENERATED)
-                            .length
-                        }
-                      </Typography>
-                      <Typography>
-                        Manual reviews:{' '}
-                        {
-                          reviews.filter((r) => r.type === ReviewType.MANUAL)
-                            .length
-                        }
-                      </Typography>
-                    </>
-                  )}
-
-                  {reviews?.map((review, i) => (
-                    <Card variant="outlined" key={i}>
-                      <CardContent>
-                        <Typography>Type: {review.type}</Typography>
-                      </CardContent>
-                      {review.username ||
-                        (review.userAvatar && (
-                          <CardContent>
-                            <Grid container>
-                              {review.userAvatar && (
-                                <Grid itemScope>
-                                  <Avatar src={review.userAvatar} />
-                                </Grid>
-                              )}
-                              {review.username && (
-                                <Grid item>
-                                  <Typography>{review.username}</Typography>
-                                </Grid>
-                              )}
-                            </Grid>
-                          </CardContent>
-                        ))}
-                      <CardContent>
-                        <Typography>Rating: {review.rating}/5</Typography>
-                      </CardContent>
-                      <CardContent>
-                        <Typography>{review.title}</Typography>
-                        <Typography>{review.description}</Typography>
-                      </CardContent>
-                      <CardActions>
-                        {review.url && (
-                          <Link href={review.url} target="_blank">
-                            <Button size="small">View</Button>
-                          </Link>
-                        )}
-                      </CardActions>
-                    </Card>
-                  ))}
-                </AccordionDetails>
-              </Accordion>
-
-              {user?.rol === UserRole.SUPERADMIN && (
-                <>
-                  {product.type === ProductType.MANUAL && (
-                    <Accordion
-                      expanded={expanded === 'matches'}
-                      onChange={handleChange('matches')}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        id="matches-header"
-                      >
-                        <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                          Matches (
-                          {product.matches ? product.matches.length : 0})
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <Grid container spacing={2} mb={6}>
-                          <Grid item xs={12}>
-                            {product.matches && product.matches.length > 0 && (
-                              <>
-                                <Button
-                                  variant="contained"
-                                  onClick={() => checkMatches()}
-                                >
-                                  Check all matches
-                                </Button>
-
-                                <DataGrid
-                                  rows={rows}
-                                  columns={columns}
-                                  initialState={{
-                                    pagination: {
-                                      paginationModel: {
-                                        pageSize: 10,
-                                      },
-                                    },
-                                  }}
-                                  pageSizeOptions={[5]}
-                                  slots={{ toolbar: GridToolbar }}
-                                  disableRowSelectionOnClick
-                                />
-                              </>
-                            )}
-                          </Grid>
-                        </Grid>
-                      </AccordionDetails>
-                    </Accordion>
-                  )}
-                  <Accordion
-                    expanded={expanded === 'facts'}
-                    onChange={handleChange('facts')}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      id="facts-header"
-                    >
-                      <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                        Facts
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Button
-                        variant="contained"
-                        onClick={() => getProductFacts(productId)}
-                        disabled={
-                          product.matches && product.matches.length > 0
-                            ? false
-                            : true
-                        }
-                      >
-                        Get Facts
-                      </Button>
-                      <List>
-                        {product?.facts?.map((fact, i) => (
-                          <ListItem key={i}>
-                            <ListItemText>{fact}</ListItemText>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </AccordionDetails>
-                  </Accordion>
-
-                  <Accordion
-                    expanded={expanded === 'requests'}
-                    onChange={handleChange('requests')}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      id="requests-header"
-                    >
-                      <Typography sx={{ width: '33%', flexShrink: 0 }}>
-                        Requests ({requests.length})
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <RequestsTable requests={requests} />
-                    </AccordionDetails>
-                  </Accordion>
-                </>
-              )}
+                    )}
+                </CardContent>
+              </Card>
             </Grid>
-            {product.type === ProductType.MANUAL && (
-              <Grid item xs={3}>
-                <ScrapperProgressbar productPipeline={product.pipeline} productId={productId} />
-              </Grid>
-            )}
+
+            <Grid item xs={6}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography sx={{ fontWeight: 'bold' }}> Matches</Typography>
+                  <Divider />
+                </CardContent>
+                <CardContent sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
+                  <DataGrid
+                    sx={{ mt: 2 }}
+                    rows={rows}
+                    columns={columns}
+                    initialState={{
+                      pagination: {
+                        paginationModel: {
+                          pageSize: 10,
+                        },
+                      },
+                    }}
+                    pageSizeOptions={[5]}
+                    slots={{ toolbar: GridToolbar }}
+                    disableRowSelectionOnClick
+                  />
+                  {user?.rol === UserRole.SUPERADMIN && (
+                    <Grid container spacing={2} mt={2}>
+                      {!requests.find(
+                        (r) => r.status === RequestStatus.PENDING,
+                      ) &&
+                        product.type === ProductType.MANUAL && (
+                          <Grid item>
+                            <Button
+                              variant="contained"
+                              onClick={() => {
+                                findInMarkets();
+                              }}
+                            >
+                              Find in Marketplaces
+                            </Button>
+                          </Grid>
+                        )}
+
+                      {product.matches && product.matches.length > 0 && (
+                        <Grid item>
+                          <Button
+                            variant="contained"
+                            onClick={() => checkMatches()}
+                          >
+                            Check all matches
+                          </Button>
+                        </Grid>
+                      )}
+                    </Grid>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={6}>
+              <Card
+                variant="outlined"
+                sx={{ overflowY: 'auto', maxHeight: '70vh' }}
+              >
+                <CardContent>
+                  <Typography sx={{ fontWeight: 'bold' }}>Facts</Typography>
+                  <Divider />
+                </CardContent>
+                <CardContent sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
+                  <List>
+                    {product?.facts?.map((fact, i) => (
+                      <ListItem key={i}>
+                        <ListItemText>{fact}</ListItemText>
+                      </ListItem>
+                    ))}
+                  </List>
+                  {user?.rol === UserRole.SUPERADMIN && reviews.length > 0 && (
+                    <Button
+                      variant="contained"
+                      onClick={() => getProductFacts(productId)}
+                    >
+                      Get Facts
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={6}>
+              <Card
+                variant="outlined"
+                sx={{ overflowY: 'auto', maxHeight: '70vh' }}
+              >
+                <CardContent>
+                  <Typography sx={{ fontWeight: 'bold' }}>
+                    Requests ({requests.length})
+                  </Typography>
+                  <Divider />
+                </CardContent>
+                <CardContent sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
+                  <RequestsTable requests={requests} />
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
         </>
       ) : (

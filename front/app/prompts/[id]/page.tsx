@@ -29,7 +29,11 @@ import { AxiosError } from 'axios';
 import { ApiHandlerError } from '../../api/api.handler';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { PostPrompt, PromptModels, PromptTypes } from '../../entities/prompt.entity';
+import {
+  PostPrompt,
+  PromptModels,
+  PromptTypes,
+} from '../../entities/prompt.entity';
 import {
   createPrompt,
   getPrompt,

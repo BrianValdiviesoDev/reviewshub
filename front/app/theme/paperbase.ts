@@ -14,7 +14,7 @@ export const PaperbaseTheme = createTheme({
   palette: {
     primary: {
       light: '#63ccff',
-      main: '#009be5',
+      main: '#FF6000',
       dark: '#006db3',
     },
   },
@@ -37,7 +37,7 @@ export const PaperbaseTheme = createTheme({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#081627',
+          backgroundColor: 'black',
         },
       },
     },

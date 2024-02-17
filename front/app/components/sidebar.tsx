@@ -36,13 +36,11 @@ export default function Sidebar(props: DrawerProps) {
             icon: <CategoryIcon />,
             url: '/products',
           },
-          { id: 'Reviews', icon: <ReviewsIcon />, url: '/reviews' },
           {
             id: 'Requests',
             icon: <FormatListBulletedIcon />,
             url: '/requests',
           },
-          { id: 'Scrapper', icon: <SmartToyIcon />, url: '/scrapper' },
           { id: 'Prompts', icon: <SmartToyIcon />, url: '/prompts' },
         ],
       },
@@ -97,15 +95,21 @@ export default function Sidebar(props: DrawerProps) {
 
   return (
     <>
-      <Drawer variant="permanent" {...other}>
-        <List disablePadding>
+      <Drawer variant="permanent" {...other} sx={{ backgroundColor: 'black' }}>
+        <List disablePadding sx={{ backgroundColor: 'black' }}>
           <ListItem
-            sx={{ ...item, ...itemCategory, fontSize: 22, color: '#fff' }}
+            sx={{
+              ...item,
+              ...itemCategory,
+              fontSize: 22,
+              color: '#FF6000',
+              backgroundColor: 'black',
+            }}
           >
             Reviews Hub
           </ListItem>
           {categories.map(({ id, children }) => (
-            <Box key={id} sx={{ bgcolor: '#101F33' }}>
+            <Box key={id} sx={{ bgcolor: 'black' }}>
               <ListItem sx={{ py: 2, px: 3 }}>
                 <ListItemText sx={{ color: '#fff' }}>{id}</ListItemText>
               </ListItem>
@@ -121,7 +125,9 @@ export default function Sidebar(props: DrawerProps) {
                       router.push(category.url);
                     }}
                   >
-                    <ListItemIcon>{category.icon}</ListItemIcon>
+                    <ListItemIcon sx={{ color: '#FF6000' }}>
+                      {category.icon}
+                    </ListItemIcon>
                     <ListItemText>{category.id}</ListItemText>
                   </ListItemButton>
                 </ListItem>
