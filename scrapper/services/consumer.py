@@ -17,7 +17,8 @@ class RabbitMQ_Consumer:
 
     def __init__(self):
         credentials = pika.PlainCredentials(rabbit_user, rabbit_pass)
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host, port=rabbit_port, credentials=credentials))
+        parameters = pika.ConnectionParameters(host=rabbit_host, port=rabbit_port, credentials=credentials)
+        connection = pika.BlockingConnection(parameters)
         self.channel = connection.channel()
         self.consume()
 

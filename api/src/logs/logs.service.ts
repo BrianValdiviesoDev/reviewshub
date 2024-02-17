@@ -67,11 +67,7 @@ export class LogsService {
   }
 
   async getLogsFromScrapper(fromDate: string, toDate: string) {
-    const response = await this.httpService.axiosRef.get(
-      `${process.env.SCRAPPER_URL}/logger?fromDate=${fromDate}&toDate=${toDate}`,
-    );
-    const data = await response.data;
-    return data;
+    return 'NOT IMPLEMENTED YET!';
   }
 
   printLog(

@@ -7,11 +7,11 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
-      - MONGO_DB_NAME=reviews
-      - MONGO_DB_USERNAME=${MONGO_DB_USERNAME}
-      - MONGO_DB_PASSWORD=${MONGO_DB_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PASSWORD}
+      - MONGO_DB_NAME=${MONGODB_DB}
+      - MONGO_DB_USERNAME=${MONGODB_USER}
+      - MONGO_DB_PASSWORD=${MONGODB_PASS}
     networks:
       - reviews-network
     volumes:
@@ -36,10 +36,9 @@ services:
     ports:
       - "4000:4000"
     environment:
-      - MONGO_DB_URI=${MONGO_DB_URI}
-      - SCRAPPER_URL=http://reviews-scrapper:8000
+      - MONGO_DB_URI=mongodb://${MONGODB_USER}:${MONGODB_PASS}@mongo:27017/${MONGODB_DB}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - RABBITMQ_URI=amqp://brian:123456@localhost:5672
+      - RABBITMQ_URI=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       - API_QUEUE=${API_QUEUE}
       - AMAZON_QUEUE=${AMAZON_QUEUE}
     networks:
@@ -65,14 +64,18 @@ services:
     ports: 
       - "5000:80"
     environment:
-      - MONGO_DB_URI=${MONGO_DB_URI}
-      - REVIEWS_HUB_URL=http://reviews-api:4000
-      - REVIEWS_BACKOFFICE_URL=http://reviews-front:3000
+      - MONGO_DB_URI=mongodb://${MONGODB_USER}:${MONGODB_PASS}@mongo:27017/${MONGODB_DB}
       - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
       - DEBUG=true
       - HUB_MODE=true
-      - PRODUCTS_TO_SEARCH=20
-      - REVIEWS_TO_READ=100
+      - PRODUCTS_TO_SEARCH=${PRODUCTS_TO_SEARCH}
+      - REVIEWS_TO_READ=${REVIEWS_TO_READ}
+      - API_QUEUE=${API_QUEUE}
+      - AMAZON_QUEUE=${AMAZON_QUEUE}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
     volumes:
       - type: volume
         source: scrapper_logs
