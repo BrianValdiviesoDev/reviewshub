@@ -18,8 +18,8 @@ import OpenAI from 'openai';
 import { RequestsService } from 'src/requests/requests.service';
 import { HttpService } from '@nestjs/axios';
 import { Request } from 'src/requests/entities/requests.schema';
-import { ProductsService } from 'src/products/products.service';
 import { Pipeline } from 'src/products/entities/products.entity';
+import { ChatCompletionMessageParam } from 'openai/resources';
 
 @Injectable()
 export class OpenaiService {
@@ -91,23 +91,37 @@ export class OpenaiService {
       throw new NotFoundException('Product has no checkMatchesPrompt');
     }
 
-    const prompt = this.fillPrompt(
-      (product.checkMatchesPrompt as any)?.prompt,
-      product,
-      match,
-    );
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const messages = [];
+    if ((product.checkMatchesPrompt as any)?.preprompt) {
+      messages.push({
+        role: 'system',
+        content: this.fillPrompt(
+          (product.checkMatchesPrompt as any)?.preprompt,
+          product,
+          match,
+        ),
+      });
+    }
+    messages.push({
+      role: 'user',
+      content: this.fillPrompt(
+        (product.checkMatchesPrompt as any)?.prompt,
+        product,
+        match,
+      ),
+    });
     this.logsService.printLog(
       `Calling OpenAI API to check matches`,
       'info',
       undefined,
       productId,
-      JSON.stringify({ matchId: matchId, prompt: prompt }),
+      JSON.stringify({ matchId: matchId, messages: messages }),
       'openai',
     );
     const completion = await openai.chat.completions.create({
-      messages: [{ role: 'system', content: prompt }],
-      model: 'gpt-3.5-turbo-0125',
+      messages: messages as ChatCompletionMessageParam[],
+      model: (product.checkMatchesPrompt as any)?.model,
     });
 
     const response = completion.choices[0].message.content;
@@ -310,24 +324,37 @@ export class OpenaiService {
       throw new NotFoundException('This product has no reviews');
     }
 
-    const prompt = this.fillPrompt(
-      (product.factsPrompt as any)?.prompt,
-      product,
-      undefined,
-      reviews,
-    );
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const messages = [];
+    if ((product.factsPrompt as any)?.preprompt) {
+      messages.push({
+        role: 'system',
+        content: this.fillPrompt(
+          (product.factsPrompt as any)?.preprompt,
+          product,
+          undefined,
+        ),
+      });
+    }
+    messages.push({
+      role: 'user',
+      content: this.fillPrompt(
+        (product.factsPrompt as any)?.prompt,
+        product,
+        undefined,
+      ),
+    });
     this.logsService.printLog(
       `Calling OpenAI API to get facts`,
       'info',
       undefined,
       productId,
-      JSON.stringify({ prompt: prompt }),
+      JSON.stringify({ messages }),
       'openai',
     );
     const completion = await openai.chat.completions.create({
-      messages: [{ role: 'system', content: prompt }],
-      model: 'gpt-3.5-turbo-0125',
+      messages: messages as ChatCompletionMessageParam[],
+      model: (product.factsPrompt as any)?.model,
     });
 
     const response = completion.choices[0].message.content;
@@ -438,11 +465,26 @@ export class OpenaiService {
       throw new NotFoundException('Product has no reviewsPrompt');
     }
 
-    const prompt = this.fillPrompt(
-      (product.reviewsPrompt as any)?.prompt,
-      product,
-    );
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const messages = [];
+    if ((product.reviewsPrompt as any)?.preprompt) {
+      messages.push({
+        role: 'system',
+        content: this.fillPrompt(
+          (product.reviewsPrompt as any)?.preprompt,
+          product,
+          undefined,
+        ),
+      });
+    }
+    messages.push({
+      role: 'user',
+      content: this.fillPrompt(
+        (product.reviewsPrompt as any)?.prompt,
+        product,
+        undefined,
+      ),
+    });
     this.logsService.printLog(
       `Calling OpenAI API to generate reviews.`,
       'info',
@@ -452,8 +494,8 @@ export class OpenaiService {
       'openai',
     );
     const completion = await openai.chat.completions.create({
-      messages: [{ role: 'system', content: prompt }],
-      model: 'gpt-4-0125-preview', //gpt-3.5-turbo-0125',
+      messages: messages as ChatCompletionMessageParam[],
+      model: (product.reviewsPrompt as any)?.model,
     });
 
     const response = completion.choices[0].message.content;

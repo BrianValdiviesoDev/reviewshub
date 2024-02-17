@@ -29,7 +29,7 @@ import { AxiosError } from 'axios';
 import { ApiHandlerError } from '../../api/api.handler';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { PostPrompt, PromptTypes } from '../../entities/prompt.entity';
+import { PostPrompt, PromptModels, PromptTypes } from '../../entities/prompt.entity';
 import {
   createPrompt,
   getPrompt,
@@ -43,6 +43,7 @@ export default function ProductForm({ params }: { params: { id: string } }) {
     name: '',
     prompt: '',
     type: PromptTypes.GENERATE_FACTS,
+    model: PromptModels.GPT_3_5_TURBO,
   });
   const formikRef = useRef<FormikHelpers<PostPrompt> | null>(null);
   const router = useRouter();
@@ -66,6 +67,7 @@ export default function ProductForm({ params }: { params: { id: string } }) {
     name: yup.string().required('Name is required'),
     prompt: yup.string().required('Prompt is required'),
     type: yup.string().required('Type is required'),
+    model: yup.string().required('Model is required'),
   });
 
   const handleSubmit = async (values: PostPrompt) => {
@@ -154,6 +156,34 @@ export default function ProductForm({ params }: { params: { id: string } }) {
                       ))}
                     </Select>
                   </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel id="model-label">Model</InputLabel>
+                    <Select
+                      labelId="model-label"
+                      name="model"
+                      value={values.model}
+                      label="Model"
+                      onChange={handleChange}
+                      error={touched.model && Boolean(errors.model)}
+                    >
+                      {Object.values(PromptModels).map((type, i) => (
+                        <MenuItem value={type} key={i}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Box>
+                    <Typography>Pre-Prompt</Typography>
+                  </Box>
+                  <Field
+                    name="preprompt"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    value={values.preprompt}
+                    as={Textarea}
+                    placeholder="Your pre-prompt to OpenAI"
+                  />
 
                   <Box>
                     <Typography>Prompt</Typography>

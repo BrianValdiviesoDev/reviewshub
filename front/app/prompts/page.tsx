@@ -56,6 +56,7 @@ export default function Prompts() {
     },
     { field: 'name', headerName: 'Name', flex: 1 },
     { field: 'type', headerName: 'Type', flex: 1 },
+    { field: 'model', headerName: 'Model', flex: 1 },
     { field: 'updatedAt', headerName: 'Last update', flex: 1 },
   ];
 

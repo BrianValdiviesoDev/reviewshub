@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { PromptEntity, PromptTypes } from './prompt.entity';
+import { PromptEntity, PromptModels, PromptTypes } from './prompt.entity';
 export type PromptDocument = HydratedDocument<Prompt>;
 
 @Schema()
@@ -15,6 +15,12 @@ export class Prompt implements PromptEntity {
 
   @Prop({ required: true })
   prompt: string;
+
+  @Prop({ required: true })
+  model: PromptModels;
+
+  @Prop()
+  preprompt?: string;
 
   @Prop({ default: Date.now() })
   createdAt: Date;

@@ -379,6 +379,17 @@ export class ProductsService {
   }
 
   async buildFacts(productId: string): Promise<void> {
+    await this.productModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(productId),
+      },
+      {
+        $set: { facts: [] },
+      },
+    );
+
+    await this.socketService.emit(EventTypes.product_updated, { productId });
+
     await this.producerService.sendToApiQueue({
       event: EventTypes.generate_product_facts,
       data: { productId: productId },

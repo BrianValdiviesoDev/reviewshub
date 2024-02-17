@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Allow } from 'class-validator';
-import { PromptTypes } from '../entities/prompt.entity';
+import { PromptModels, PromptTypes } from '../entities/prompt.entity';
 
 export class UpdatePromptDto {
   @ApiProperty()
@@ -14,4 +14,12 @@ export class UpdatePromptDto {
   @ApiProperty()
   @Allow()
   prompt?: string;
+
+  @ApiProperty()
+  @Allow()
+  model?: PromptModels;
+
+  @ApiProperty()
+  @Allow()
+  preprompt?: string;
 }
