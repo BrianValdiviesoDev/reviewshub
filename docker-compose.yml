@@ -22,13 +22,6 @@ services:
         source: MONGO_CONFIG
         target: /data/configdb
 
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    networks:
-      - reviews-network
-
   reviews-api:
     build:
       context: ./api
@@ -41,6 +34,7 @@ services:
       - RABBITMQ_URI=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       - API_QUEUE=${API_QUEUE}
       - AMAZON_QUEUE=${AMAZON_QUEUE}
+      - MATCH_THRESHOLD=${MATCH_THRESHOLD}
     networks:
       - reviews-network
     volumes:
@@ -61,8 +55,6 @@ services:
     build:
       context: ./scrapper
       dockerfile: Dockerfile
-    ports: 
-      - "5000:80"
     environment:
       - MONGO_DB_URI=mongodb://${MONGODB_USER}:${MONGODB_PASS}@mongo:27017/${MONGODB_DB}
       - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
@@ -76,12 +68,14 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASS=${RABBITMQ_PASS}
-    volumes:
-      - type: volume
-        source: scrapper_logs
-        target: /app/logs
     networks:
       - reviews-network
+    deploy:
+      mode: replicated
+      replicas: 4
+    depends_on:
+      - selenium-hub
+      - rabbitmq
 
   selenium-hub:
     image: selenium/hub:latest
@@ -106,7 +100,7 @@ services:
       - selenium-hub
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 4
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -132,7 +126,5 @@ volumes:
     name: mongo_data
   MONGO_CONFIG:
     name: mongo_config
-  scrapper_logs:
-    name: reviews_scrapper_logs
   api_logs:
     name: reviews_api_logs  

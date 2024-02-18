@@ -138,14 +138,14 @@ export class OpenaiService {
       let probability: number | undefined;
 
       if (response.length > 2) {
-        console.log('Response is too long, truncating');
         try {
           const json = JSON.parse(response);
           if (json.probability) {
-            probability = parseInt(json.probability);
+            probability = parseInt(json.probability.toString());
           } else if (json.response) {
-            probability = parseInt(json.response);
+            probability = parseInt(json.response.toString());
           }
+          console.log('===== PROBABILITY: ', probability);
         } catch (e) {
           console.log('Error parsing json probability', e);
           this.logsService.printLog(

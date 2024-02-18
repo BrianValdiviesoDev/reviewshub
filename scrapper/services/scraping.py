@@ -60,7 +60,6 @@ async def scrapeUrl(url:str, type:RequestType, requestId:str, productId:str):
         errorRequest(requestId, f"Error executing request: {e}")
 
     print_log("END_SCRAPE URL", 'info', requestId, productId)
-    await executeNextPendingRequest()
     return
 
 async def executeNextPendingRequest():

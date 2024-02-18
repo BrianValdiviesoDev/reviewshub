@@ -403,7 +403,17 @@ class AmazonScrapper:
             return []
 
         reviews_founded = []
-        while len(reviews_founded) < min_results:
+        end_of_reviews = False
+        while len(reviews_founded) < min_results or end_of_reviews == False:
+            review_url = ''
+            title = ''
+            description = ''
+            rating = ''
+            username = ''
+            userAvatar = ''
+            review_id = ''
+            user_profile_link = ''
+            reviewDate = ''
             try:
                 global_info = self.browser.find_element(
                     By.ID, 'filter-info-section').text
@@ -495,21 +505,23 @@ class AmazonScrapper:
                         print_log(
                             f"Description by class 'review-text-content' not found", 'warning', self.requestID, self.productID)
 
-                    review_founded = {
-                        "url": review_url,
-                        "title": title,
-                        "description": description,
-                        "rating": rating,
-                        "username": username,
-                        "userAvatar": userAvatar,
-                        "reviewDate": reviewDate,
-                        "metadata": {
-                            'amazon_review_id': review_id,
-                            'amazon_user_profile': user_profile_link,
-                        },
-                    }
-                    reviews_founded.append(review_founded)
+                    if title != "" and description != "":
+                        review_founded = {
+                            "url": review_url,
+                            "title": title,
+                            "description": description,
+                            "rating": rating,
+                            "username": username,
+                            "userAvatar": userAvatar,
+                            "reviewDate": reviewDate,
+                            "metadata": {
+                                'amazon_review_id': review_id,
+                                'amazon_user_profile': user_profile_link,
+                            },
+                        }
+                        reviews_founded.append(review_founded)
             except:
+                end_of_reviews = True
                 print_log(
                     f"Error getting results by class 'review'", 'error', self.requestID, self.productID)
                 break
@@ -522,9 +534,11 @@ class AmazonScrapper:
                 if next_button.get_attribute('class').find('a-disabled') != -1:
                     print_log("No more pages", 'info',
                               self.requestID, self.productID)
+                    end_of_reviews = True
                     break
                 next_button.click()
             except:
+                end_of_reviews = True
                 print_log(
                     f"Error getting next button by class 'a-last'", 'error', self.requestID, self.productID)
                 break

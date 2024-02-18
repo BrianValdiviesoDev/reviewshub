@@ -556,4 +556,24 @@ export class ProductsService {
     });
     await this.checkPipeline(productId);
   }
+
+  async checkProductMatches(
+    productId: string,
+    matchesIds: string[],
+    user: JwtDto,
+  ): Promise<void> {
+    if (user?.rol !== UserRole.SUPERADMIN) {
+      throw new BadRequestException('You are not allowed to check matches');
+    }
+    console.log('MATCH WITH: ', matchesIds);
+    matchesIds.forEach((matchId) => {
+      this.producerService.sendToApiQueue({
+        event: EventTypes.check_match,
+        data: {
+          productId,
+          matchId,
+        },
+      });
+    });
+  }
 }

@@ -51,7 +51,7 @@ export const checkProductMatches = async (
   id: string,
   matchesIds: string[],
 ): Promise<void> => {
-  const response = await axios.post(`${API_URL}/queues/checkMatches/${id}`, {
+  const response = await axios.post(`${API_URL}/products/${id}/checkMatches`, {
     matches: matchesIds,
   });
   return response.data;

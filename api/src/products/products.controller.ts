@@ -112,4 +112,11 @@ export class ProductsController {
       req.user,
     );
   }
+
+  @UseGuards(AuthGuard)
+  @Post(':id/checkMatches')
+  @Roles(UserRole.SUPERADMIN)
+  checkmatches(@Param('id') id: string, @Body() data: any, @Req() req: any) {
+    return this.productsService.checkProductMatches(id, data.matches, req.user);
+  }
 }
