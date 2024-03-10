@@ -379,6 +379,7 @@ export class OpenaiService {
           (product.factsPrompt as any)?.preprompt,
           product,
           undefined,
+          reviews,
         ),
       });
     }
@@ -388,6 +389,7 @@ export class OpenaiService {
         (product.factsPrompt as any)?.prompt,
         product,
         undefined,
+        reviews,
       ),
     });
     this.logsService.printLog(
@@ -574,8 +576,8 @@ export class OpenaiService {
               product: productId,
               type: ReviewType.GENERATED,
               url: '',
-              username: '',
-              userAvatar: '',
+              username: review.username,
+              userAvatar: review.userAvatar,
               reviewDate: new Date(),
               buyDate: new Date(),
               images: [],
@@ -586,6 +588,8 @@ export class OpenaiService {
               title: review.title,
               description: review.description,
               rating: review.rating,
+              username: review.username,
+              userAvatar: review.userAvatar,
             });
             return result;
           }),
@@ -654,6 +658,10 @@ export class OpenaiService {
     match?: Product,
     reviews?: Review[],
   ): string {
+    let reviews_descriptions: string[] = [];
+    if (reviews) {
+      reviews_descriptions = reviews.map((r) => r.description);
+    }
     const filledPrompt = prompt
       .replaceAll('##product.name##', product.name)
       .replaceAll('##match.name##', match?.name || '')
@@ -668,7 +676,7 @@ export class OpenaiService {
         '##product.pendingReviews##',
         product.pendingReviews.toString(),
       )
-      .replaceAll('##product.reviews##', JSON.stringify(reviews) || '');
+      .replaceAll('##product.reviews##', reviews_descriptions.join(',') || '');
     return filledPrompt;
   }
 }

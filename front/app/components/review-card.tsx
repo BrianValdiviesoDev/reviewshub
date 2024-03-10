@@ -8,36 +8,29 @@ import {
   CardActions,
   Avatar,
   Link,
+  Rating,
 } from '@mui/material';
 
 export default function ReviewCard({ review }: { review: Review }) {
+
+  const sofiaUrl = '/sofia.png'
   return (
     <Card variant="outlined">
       <CardContent>
-        <Typography>Type: {review.type}</Typography>
-      </CardContent>
-      {review.username ||
-        (review.userAvatar && (
-          <CardContent>
-            <Grid container>
-              {review.userAvatar && (
-                <Grid itemScope>
-                  <Avatar src={review.userAvatar} />
-                </Grid>
-              )}
-              {review.username && (
-                <Grid item>
-                  <Typography>{review.username}</Typography>
-                </Grid>
-              )}
+          <Grid container spacing={1}>
+            <Grid item>
+              <Avatar src={review.userAvatar || sofiaUrl} />
             </Grid>
-          </CardContent>
-        ))}
+            <Grid item>
+              <Typography>{review.username || 'sofIA'}</Typography>
+            </Grid>
+            <Grid item>
+              <Rating name="read-only" value={review.rating} readOnly />
+            </Grid>
+          </Grid>
+        </CardContent>
       <CardContent>
-        <Typography>Rating: {review.rating}/5</Typography>
-      </CardContent>
-      <CardContent>
-        <Typography>{review.title}</Typography>
+        <Typography sx={{fontWeight:'bold'}}>{review.title}</Typography>
         <Typography>{review.description}</Typography>
       </CardContent>
       <CardActions>

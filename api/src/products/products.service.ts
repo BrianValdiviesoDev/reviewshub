@@ -319,7 +319,7 @@ export class ProductsService {
       if (p.product.toString() === matchId) {
         return {
           ...p,
-          percentage: 100,
+          percentage: [100],
         };
       }
       return p;

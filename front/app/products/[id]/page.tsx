@@ -67,6 +67,7 @@ import useSocketListener from '../../sockets/listener';
 import { EventTypes } from '../../entities/event.entity';
 import EditIcon from '@mui/icons-material/Edit';
 import ReviewCard from '../../components/review-card';
+import DownloadIcon from '@mui/icons-material/Download';
 
 export default function Product({ params }: { params: { id: string } }) {
   const { user } = useAuthStore();
@@ -249,6 +250,21 @@ export default function Product({ params }: { params: { id: string } }) {
       ApiHandlerError(e as AxiosError);
     }
   };
+
+  const downloadReviewsCSV = () => { 
+      const csvContent =
+        'data:text/csv;charset=utf-8,' +
+        'title;description;rating;username;userAvatar\n'+
+        reviews.map((review:Review) => {
+          return [review.title, review.description, review.rating, review.username, review.userAvatar].join(';')
+        }).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'reviewsHub.csv');
+      document.body.appendChild(link);
+      link.click();
+    };
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', width: 200 },
@@ -447,7 +463,7 @@ export default function Product({ params }: { params: { id: string } }) {
                         </Grid>
                         <Grid item>
                           <Button
-                            variant="contained"
+                            variant='contained'
                             onClick={() => buyReviews()}
                             disabled={product.facts ? false : true}
                           >
@@ -468,6 +484,14 @@ export default function Product({ params }: { params: { id: string } }) {
                         .length
                     }
                   </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => downloadReviewsCSV()}
+                    sx={{ marginBottom: 2 }}
+                  >
+                    <DownloadIcon />
+                    Download reviews
+                  </Button>
 
                   {reviews?.map((review, i) => (
                     <ReviewCard review={review} key={i} />

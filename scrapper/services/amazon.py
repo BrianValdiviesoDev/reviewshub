@@ -220,8 +220,16 @@ class AmazonScrapper:
                 try:
                     products = results.find_elements(
                         By.CLASS_NAME, 's-result-item')
-
                     for product in products:
+                        title = ""
+                        product_url = ""
+                        image = ""
+                        price = ""
+                        rating = ""
+                        reviews = ""
+                        uuid = ""
+                        asin = ""
+                        sponsored = False
                         if len(products_founded) >= min_results:
                             break
                         try:
@@ -314,9 +322,9 @@ class AmazonScrapper:
                             if title != "" and product_url != "":
                                 products_founded.append(product_founded)
 
-                except:
+                except Exception as e:
                     print_log(
-                        f"Error getting products by class 's-result-item'", 'error', self.requestID, self.productID)
+                        f"Error getting products by class 's-result-item'", 'error', self.requestID, self.productID, json.dumps({'error': str(e)}))
                     self.takeScreenshot("findProducts")
                     return products_founded
             except:
